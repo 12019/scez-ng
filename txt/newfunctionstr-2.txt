@@ -1,0 +1,255 @@
+#include <stdlib.h>
+#include <scgeneral.h>
+
+#define SC_DRV_CLRCMD() \
+	memset( cmd, 0, sizeof( cmd ) );
+#define SC_DRV_CLRRSP() \
+	memset( rsp, 0, sizeof( rsp ) );
+
+#ifdef SCEZ
+
+#include <screader.h>
+#include <scbasiccard.h>
+#define SC_DRV_STATE \
+	ri, ci
+#define SC_DRV_STATE_DECL \
+	SC_READER_INFO *ri, SC_CARD_INFO *ci
+#define SC_DRV_VARS(cmdsize,rspsize) \
+	BYTE cmd[cmdsize], rsp[ SC_GENERAL_SHORT_DATA_SIZE+2 ]; \
+	SC_APDU apdu; \
+	int ret;
+#define SC_DRV_PRE() \
+	ci->sw[0]=0x00; ci->sw[1]=0x00;
+#define SC_DRV_INITAPDU(case,cmdlength) \
+	apdu.cse=case; \
+	apdu.cmd=cmd; \
+	apdu.cmdlen=cmdlength; \
+	apdu.rsp=rsp; \
+	apdu.rsplen=0; \
+	SC_DRV_CLRCMD(); \
+	SC_DRV_CLRRSP();
+#define SC_DRV_SETHEADER(cla,ins,p1,p2) \
+	cmd[0]=cla; \
+	cmd[1]=ins; \
+	cmd[2]=p1; \
+	cmd[3]=p2;
+#define SC_DRV_SETCMDLEN(len) \
+	apdu.cmdlen=len;
+#define SC_DRV_GETCMDLEN() \
+	apdu.cmdlen
+#define SC_DRV_SETRSPLEN(len) \
+	apdu.rsplen=len;
+#define SC_DRV_GETRSPLEN() \
+	apdu.rsplen
+#define SC_DRV_SENDAPDU() \
+	ret=scReaderSendAPDU( ri, ci, &apdu ); \
+	SC_DRV_CLRCMD(); \
+	if( ret!=SC_EXIT_OK ) { \
+		SC_DRV_CLRRSP(); \
+		return( ret ); \
+	}
+#define SC_DRV_PROCSW() \
+	if( apdu.rsplen<2 ) return( SC_EXIT_BAD_SW ); \
+	ci->sw[0] = apdu.rsp[apdu.rsplen-2]; \
+	ci->sw[1] = apdu.rsp[apdu.rsplen-1]; \
+	apdu.rsplen-=2;
+
+#elif MUSCLE
+
+#include <winscard.h>
+#define SC_DRV_STATE \
+	hCard, pioSendPci, sw
+#define SC_DRV_STATE_DECL \
+	SCARDHANDLE hCard, LPCSCARD_IO_REQUEST pioSendPci, BYTE *sw
+#define SC_DRV_VARS(cmdsize,rspsize) \
+	BYTE cmd[cmdsize], rsp[rspsize]; \
+	DWORD cmdlen=cmdsize, rsplen=rspsize; \
+	SCARD_IO_REQUEST pioRecvPci; \
+	LONG rv;
+#define SC_DRV_PRE() \
+	if( sw==NULL ) return( SC_EXIT_BAD_PARAM ); \
+	sw[0] = 0; \
+	sw[1] = 0;
+#define SC_DRV_INITAPDU(case,cmdlength) \
+	SC_DRV_CLRCMD(); \
+	SC_DRV_CLRRSP();
+#define SC_DRV_SETHEADER(cla,ins,p1,p2) \
+	cmd[0]=cla; \
+	cmd[1]=ins; \
+	cmd[2]=p1; \
+	cmd[3]=p2;
+#define SC_DRV_SETCMDLEN(len) \
+	cmdlen=len;
+#define SC_DRV_GETCMDLEN() \
+	cmdlen
+#define SC_DRV_SETRSPLEN(len) \
+	rsplen=len;
+#define SC_DRV_GETRSPLEN() \
+	rsplen
+#define SC_DRV_SENDAPDU() \
+	rv = SCardTransmit( hCard, pioSendPci, cmd, \
+		cmdlen, &pioRecvPci, rsp, &rsplen ); \
+	SC_DRV_CLRCMD(); \
+	if( rv!=SCARD_S_SUCCESS ) { \
+		SC_DRV_CLRRSP(); \
+		switch( rv ) { \
+		case SCARD_E_NOT_TRANSACTED: \
+			return( SC_EXIT_UNKNOWN_ERROR ); \
+		case SCARD_E_INVALID_HANDLE: \
+			return( SC_EXIT_BAD_PARAM ); \
+		case SCARD_E_PROTO_MISMATCH: \
+			return( SC_EXIT_PROTOCOL_ERROR ); \
+		case SCARD_E_INVALID_VALUE: \
+			return( SC_EXIT_BAD_PARAM ); \
+		default: \
+			return( SC_EXIT_UNKNOWN_ERROR ); \
+		} \
+	}
+#define SC_DRV_PROCSW() \
+	if( rsplen<2 ) return( SC_EXIT_BAD_SW ); \
+	sw[0] = rsp[rsplen-2]; \
+	sw[1] = rsp[rsplen-1]; \
+	rsplen-=2;
+
+#elif CTAPI
+
+#include <ctapi.h>
+#define SC_DRV_STATE \
+	ctn, dest, sw
+#define SC_DRV_STATE_DECL \
+	unsigned int ctn, unsigned char dest, BYTE *sw
+#define SC_DRV_VARS(cmdsize,rspsize) \
+	BYTE cmd[cmdsize], rsp[ SC_GENERAL_SHORT_DATA_SIZE+2 ]; \
+	unsigned int cmdlen, rsplen; \
+	unsigned char dad=dest, sad=2; \
+	int ret;
+#define SC_DRV_PRE() \
+	if( sw==NULL ) return( SC_EXIT_BAD_PARAM ); \
+	sw[0]=0x00; sw[1]=0x00;
+#define SC_DRV_INITAPDU(case,cmdlength) \
+	cmdlen=cmdlength; \
+	rsplen=sizeof(rsp); \
+	SC_DRV_CLRCMD(); \
+	SC_DRV_CLRRSP();
+#define SC_DRV_SETHEADER(cla,ins,p1,p2) \
+	cmd[0]=cla; \
+	cmd[1]=ins; \
+	cmd[2]=p1; \
+	cmd[3]=p2;
+#define SC_DRV_SETCMDLEN(len) \
+	cmdlen=len;
+#define SC_DRV_GETCMDLEN() \
+	cmdlen
+#define SC_DRV_SETRSPLEN(len) \
+	rsplen=len;
+#define SC_DRV_GETRSPLEN() \
+	rsplen
+#define SC_DRV_SENDAPDU() \
+	ret=CT_data( ctn, &dad, &sad, cmdlen, cmd, &rsplen, rsp ); \
+	SC_DRV_CLRCMD(); \
+	if( ret!=OK ) { \
+		SC_DRV_CLRRSP(); \
+		switch( ret ) { \
+		case ERR_INVALID: \
+			return( SC_EXIT_BAD_PARAM ); \
+		case ERR_CT: \
+			return( SC_EXIT_UNKNOWN_ERROR ); \
+		case ERR_TRANS: \
+			return( SC_EXIT_IO_ERROR ); \
+		case ERR_MEMORY: \
+			return( SC_EXIT_MALLOC_ERROR ); \
+		case ERR_HTSI: \
+			return( SC_EXIT_UNKNOWN_ERROR ); \
+		default: \
+			return( SC_EXIT_UNKNOWN_ERROR ); \
+		} \
+	} \
+	if( sad!=dest ) { \
+		SC_DRV_CLRRSP(); \
+		return( SC_EXIT_UNKNOWN_ERROR ); \
+	}
+#define SC_DRV_PROCSW() \
+	if( rsplen<2 ) return( SC_EXIT_BAD_SW ); \
+	sw[0] = rsp[rsplen-2]; \
+	sw[1] = rsp[rsplen-1]; \
+	rsplen-=2;
+
+#else
+
+#error No interface defined.
+
+#endif
+
+#define SC_CRYPTOFLEX_RSA_SIZE 0x80
+
+int scCryptoflexCmdRsaSign( SC_DRV_STATE_DECL,
+    BYTE keynum, const BYTE *data, BYTE *resp, int *resplen )
+{
+	SC_DRV_VARS( 0x86, 0x82 );
+
+	SC_DRV_PRE();
+
+	SC_DRV_INITAPDU(SC_APDU_CASE_4_SHORT,0x86);
+
+	SC_DRV_SETHEADER(0xC0,0x88,0x00,keynum);
+
+	cmd[4]=0x80;    /* RSA key length */
+	memcpy( cmd+5, data, SC_CRYPTOFLEX_RSA_SIZE );
+
+	SC_DRV_SETCMDLEN( 0x86 ); /* Not neccessary */
+
+	SC_DRV_SENDAPDU();
+
+	SC_DRV_PROCSW();
+
+	memcpy( resp, rsp, SC_DRV_GETRSPLEN() );
+	*resplen=SC_DRV_GETRSPLEN();
+
+	SC_DRV_CLRRSP();
+
+	return( SC_EXIT_OK );
+}
+
+int scBasiccardCmdFileIo( SC_DRV_STATE_DECL,
+	BYTE syscode, BYTE filenum, const BYTE *data, int datalen, BYTE *status,
+	BYTE *resp, int *resplen )
+{
+	SC_DRV_VARS(SC_GENERAL_SHORT_DATA_SIZE+5+1,SC_GENERAL_SHORT_DATA_SIZE+2);
+
+	SC_DRV_PRE();
+
+	if( datalen>255 ) return( SC_EXIT_BAD_PARAM );
+	if( *resplen>256 ) return( SC_EXIT_BAD_PARAM );
+
+	SC_DRV_INITAPDU(SC_APDU_CASE_4_SHORT,5+1+datalen);
+
+	SC_DRV_SETHEADER(0xC0, 0x18, syscode, filenum);
+	cmd[4]=datalen;
+	cmd[5+datalen]=*resplen&0xFF;
+
+	if( data!=NULL ) memcpy( cmd+5, data, datalen );
+
+#ifdef SCEZ
+	if( (ret=scBasiccardEncrCAPDU( ci, &apdu )) !=SC_EXIT_OK ) return( ret );
+#endif /* SCEZ */
+	SC_DRV_SENDAPDU();
+#ifdef SCEZ
+	if( (ret=scBasiccardDecrRAPDU( ci, &apdu )) !=SC_EXIT_OK ) return( ret );
+#endif /* SCEZ */
+
+	SC_DRV_PROCSW();
+
+	*resplen = 0;
+	*status = 0xFF;
+
+	if( SC_DRV_GETRSPLEN()>=1 ) {
+		*status=rsp[0];
+		memcpy( resp, rsp+1, SC_DRV_GETRSPLEN()-1 );
+		*resplen = SC_DRV_GETRSPLEN()-1;
+	}
+
+	SC_DRV_CLRRSP();
+
+	return( SC_EXIT_OK );
+}
+

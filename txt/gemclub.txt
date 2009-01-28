@@ -1,0 +1,12 @@
+GemClub
+=======
+
+Used e.g. for Britney Spears SmartFlash.
+
+Commands
+--------
+
+XX 20 XX XX XX
+XX BE 00 00 04 (SmartFlash Response: 57 11 11 FF)
+XX DE 00 00 04
+

@@ -1,0 +1,62 @@
+SIMMan
+======
+
+
+File Format (including origin of data)
+-----------
+
+% Comment
+
+[Info]
+ICCID=nnnnnnn
+	(M, R:A, /2FE2, TR, 10.1.1, dump can only be written to a card if
+	this ICCID is the sams as the card's or if this field is missing)
+Provider=cccccc
+	(O, R:A, /7F20/6F46, TR, 10.2.11)
+Phase=n[+]
+	(M, R:A, /7F20/6FAE, TR, 10.2.19)
+EmergencyCallCodes=nnnnnn[,nnnnnn,...]
+	(O, R:A, /7F20/6FB7, TR, 10.2.27)
+MaxLanguageEntries=nn
+	(M, R:A, U:1, /7F20/6F05, TR, 10.2.1)
+MaxPhonebookEntries=nn
+	(O, RU:1, /7F10/6F3A, LF, 10.3.1)
+MaxSmsEntries=nn
+	(O, RU:1, /7F10/6F3C, LF, 10.3.3)
+
+[Misc]
+LanguagePreferences=nn[,nn,nn,...]
+	(M, R:A, U:1, /7F20/6F05, TR, 10.2.1)
+
+[Phonebook]
+n: cccccccc ([+]nnnnnnn)
+	(O, RU:1, /7F10/6F3A, LF, 10.3.1)
+	(O, R:1, U:2, /7F10/6F3B, LF, 10.3.2)
+
+[SMS]
+n: cccccccc ([+]nnnnnnn[,rec|,read|,sent][,Binary=nn][,TS=yymmddhhmmsszz][,MR=nn][,PID=xx][,VP=nn[nnnnnnnnnnnn]][,DCS=nn])
+	(O, RU:1, /7F10/6F3C, LF, 10.3.3, messages without status are written
+	as "to be sent" on the card)
+	(O, RU:1, /7F10/6F42, LF, 10.3.6)
+	(O, RU:1, /7F10/6F43, TR, 10.3.7)
+n: xxxxxxxx (Unknown)
+
+n: decimal digit
+c: character
+x: hexagesimal digit
+
+
+Usage
+-----
+
+To write the data to stdout simply execute "simman". To write the data
+back to the SIM execute it with the parameter "-r" and pipe the data
+file into stdin, e.g. "simman -r <data.txt".
+
+
+Misc
+----
+
+Possible future features are handling of fixed dialing numbers, acronyms
+for the languages, e.g. de for 0.
+

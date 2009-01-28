@@ -1,0 +1,161 @@
+# Makefile for sio + scez
+
+# $Id: Makefile.palm 903 2000-10-23 15:20:36Z zwiebeltu $
+
+#
+# Reserved application IDs: Scl0 - Scl9
+#
+
+# Reader type
+
+#TYPE=-DREADER_TYPE=SC_READER_DUMBMOUSE
+#TYPE=-DREADER_TYPE=SC_READER_TOWITOKO
+
+# Card slot in reader
+# 
+# Dumbmouse,Towitoko: Use slot 1.
+#
+# CT-API: The linux/solaris CT-API drivers normaly use slot 0.
+
+#SLOT=-DREADER_SLOT=1
+
+# RESPECTS_LE: When defined my T=1 implementation limits response
+#     length to Le bytes. This is how I understand ISO7816-4 5.3
+#     and A 2S, A 4S.
+
+#RESPLE=-DRESPECTS_LE
+
+# READER_DEBUG: Prints communication data to stdout.
+#
+
+#RDBG=-DREADER_DEBUG 
+
+# Palm Pilot Version. This is relevant for SIO handshake line control.
+# Valid Types:
+#     PALM_III
+
+PALMVER=-DPALM_III
+
+##########################################################################
+
+AR=m68k-palmos-coff-ar
+BUILDPRC=build-prc
+EXPLIST=m68k-palmos-coff-exportlist
+CC=m68k-palmos-coff-gcc
+NM=m68k-palmos-coff-nm
+OBJRES=m68k-palmos-coff-obj-res
+STUBGEN=m68k-palmos-coff-stubgen
+
+CFLAGS=-O6 -Wall $(TYPE) $(SLOT) $(RESPLE) $(RDBG) $(PALMVER) -DWITH_DES -DWITH_LIBDES -Ipalm/pilotSSLeay-2.01
+LDFLAGS=-L.
+
+VERSION=`date +%Y%m%d`
+TARFILE=scez-palm-$(VERSION).tar
+ZIPFILE=scez-palm-$(VERSION).zip
+COMPRESS=gzip
+
+SRCS= \
+	scbasiccard.c \
+	sccryptoflex.c \
+	sccyberflex.c \
+	scdumbmouse.c \
+	scgeldkarte.c \
+	scgeneral.c \
+	scgpk4000.c \
+	scgsmsim.c \
+	scmfc.c \
+	scmultiflex.c \
+	scproton.c \
+	scpts.c \
+	scquick.c \
+	screader.c \
+	scsmartcafe.c \
+	scsmartcard.c \
+	sct0.c \
+	sct1.c \
+	sctcos.c \
+	sctowitoko.c
+
+OBJS=$(SRCS:.c=.o)
+
+HDRS= \
+	scbasiccard.h \
+	sccryptoflex.h \
+	sccyberflex.h \
+	scdumbmouse.h \
+	scgeldkarte.h \
+	scgeneral.h \
+	scgpk4000.h \
+	scgsmsim.h \
+	scmfc.h \
+	scmultiflex.h \
+	scpts.h \
+	screader.h \
+	scsmartcafe.h \
+	scsmartcard.h \
+	sct0.h \
+	sct1.h \
+	sctcos.h \
+	sctowitoko.h
+
+SLSRCS= \
+	siolight.c
+
+SLOBJS=$(SLSRCS:.c=.o)
+
+SLHDRS= \
+	siolight.h
+
+all: libsiolight libscez scdir
+
+libsiolight: $(SLOBJS) SIOLight.prc
+
+libscez: $(OBJS) prcs
+
+scdir:
+	(cd palm/scdir; make)
+
+prcs:
+	# Stubs
+	makestub SCEZmain "SCEZ Main Library" Scl1 "scgeneral.o scsmartcard.o"
+	makestub SCEZreader "SCEZ Reader Library" Scl2 "screader.o \
+		sct0.o sct1.o scpts.o scdumbmouse.o sctowitoko.o"
+	makestub SCEZcard1 "SCEZ Card Library 1" Scl3 "scbasiccard.o \
+		sccryptoflex.o scmultiflex.o sctcos.o"
+	makestub SCEZcard2 "SCEZ Card Library 2" Scl4 "scgpk4000.o scgeldkarte.o \
+		scgsmsim.o scproton.o"
+	makestub SCEZcard3 "SCEZ Card Library 3" Scl5 "sccyberflex.o scmfc.o \
+		scsmartcafe.o scquick.o"
+	# Prcs
+	makeprc SCEZmain "SCEZ Main Library" Scl1 "-lSCEZreader -lSCEZcard1 -lSCEZcard2 -lSCEZcard3"
+	makeprc SCEZreader "SCEZ Reader Library" Scl2 "-lSIOLight -lSCEZmain"
+	makeprc SCEZcard1 "SCEZ Card Library 1" Scl3 "-ldes -lSCEZmain -lSCEZreader"
+	makeprc SCEZcard2 "SCEZ Card Library 2" Scl4 "-ldes -lSCEZmain -lSCEZreader"
+	makeprc SCEZcard3 "SCEZ Card Library 3" Scl5 "-ldes -lSCEZmain -lSCEZreader"
+
+SIOLight.prc:
+	makestub SIOLight "SCEZ SIO Library" Scl9 "siolight.o"
+	makeprc SIOLight "SCEZ SIO Library" Scl9 ""
+
+##########################################################################
+
+clean:
+	/bin/rm -f *.o *.a *.sa core *.exp *.S SCEZ* SIO*
+	/bin/rm -f GLib0000* data0000* rloc0000*
+	(cd palm/scdir; make clean)
+
+tar:
+	/bin/rm -f $(TARFILE) $(TARFILE).Z $(TARFILE).gz
+	tar cf $(TARFILE) SCEZcard1Lib.prc SCEZcard2Lib.prc SCEZcard3Lib.prc \
+		SCEZmainLib.prc SCEZreaderLib.prc SIOLightLib.prc palm/scdir/scdir.prc \
+		palm/pilotSSLeay-2.01/DESLib.prc palm/Libc.prc
+	$(COMPRESS) $(TARFILE)
+
+zip:
+	/bin/rm -f $(ZIPFILE)
+	zip -9 $(ZIPFILE) SCEZcard1Lib.prc SCEZcard2Lib.prc SCEZcard3Lib.prc \
+		SCEZmainLib.prc SCEZreaderLib.prc SIOLightLib.prc palm/scdir/scdir.prc \
+		palm/pilotSSLeay-2.01/DESLib.prc palm/Libc.prc
+
+
+

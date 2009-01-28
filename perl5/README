@@ -1,0 +1,12 @@
+SCEZ perl5 bindings
+-------------------
+
+The usage is very similar to the usage in C (see tpscez.pl).
+
+Important differences are:
+
+- The free the memory of a SC_CARD_INFO and SC_READER_INFO structure
+  you can't call scGeneralFreeCard or scGeneralFreeReader because they
+  want a pointer to a pointer. (At least I have found no way to do this.)
+  You have to call SC_CARD_INFO_free and SC_READER_INFO_free.
+

@@ -1,0 +1,83 @@
+Driver: Official Towitoko Chipdriver driver for MS-Windows
+
+CCT-API Library Test
+
+Loading CT-API library (ctapiw32.dll): Ok.
+Initialising CT-API library: Ok.
+Test 1: Ok
+Test 2: Ok
+Test 3: Ok
+Test 4: Ok
+   rsp=3BEF00FF813150456563080413FFFFFFFF0320033601318A9001
+Test 5: Error.
+   ret=0
+Test 6: Ok
+   rsp=6563080413FFFFFFFF0320033601319001
+Test 7: Error.
+   ret=0
+Test 8: Ok
+Test 9: Ok
+   rsp=3BEF00FF813150456563080413FFFFFFFF0320033601318A9001
+Test 10: Error.
+   ret=0
+Test 11: Ok
+   rsp=6563080413FFFFFFFF0320033601319001
+Test 12: Error.
+   ret=0
+Test 13: Ok
+   rsp=444554574B2020434458312E352020393832302020202033383336202020209000
+Test 14: Error.
+   ret=0
+Test 15: Ok
+   rsp=059000
+Test 16: Error.
+   ret=0
+Test 23: Skiped
+Test 24: Skiped
+Test 25: Skiped
+Test 26: Skiped
+Test 17: Ok
+Test 18: Error.
+   ret=-8
+Test 19: Error.
+   ret=0
+Test 20: Error.
+   sw1=90 rsp=9000
+Test 21: Ok
+Test 22: Ok
+Test 1b: Ok
+Test 2b Ok
+Test 3b: Ok
+Test 5b: Ok
+Test 7b: Error.
+   sw1=62 rsp=6200
+Test 8b: Error.
+   sw1=62 rsp=6200
+Test 10b: Error.
+   sw1=62 rsp=6200
+Test 12b: Ok
+   rsp=444554574B2020434458312E352020393832302020202033383336202020209000
+Test 13b: Error.
+   ret=0
+Test 14b: Ok
+   rsp=009000
+Test 15b: Error.
+   ret=0
+Test 16b: Ok
+Test 17b: Error.
+   ret=-8
+Test 18b: Error.
+   ret=0
+Test 22b: Error.
+   sw1=64 sw2=A1 rsp=64A1
+Test 1c: Error.
+   sw1=62 rsp=6200
+Test 2c: Error.
+   sw1=62 rsp=6200
+Test 3c: Ok
+Test 1d: Error.
+   ret=0
+Warning: Implemented CT-BCS version is 0.9
+Closing CT-API library: Ok.
+
+25 (including skiped) out of 45 tests passed.

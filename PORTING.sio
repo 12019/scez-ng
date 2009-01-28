@@ -1,0 +1,29 @@
+Porting sio to a unix varient is fairly easy ... it basically requires knowing
+which of the three mechanisms that are encoded should be used for controlling
+the serial comms parameters:
+
+Have a look in sio.c at the setups for the options:
+
+USE_TERMIOS
+	- standardised interface on top of termio - most systems are moving
+	  towards this as an interface. It is almost identical to the termio
+	  interface with a pile of macros and convienence functions wrapped
+	  around it
+
+	- if tcgetattr is available then use this interface 
+
+USE_TERMIO
+	- sysv setup
+	- if termio is available then use this interface 
+
+USE_SGTTY
+	- original sgtty interface ... older Berkeley based systems
+    	- if neither tcgetattr or termio is available then fallback 
+	  to using this interface
+	  
+
+There are some variations on the support for each of these interfaces where
+you may have to comment out some initialisation logic that refers to 
+specific fields in the state structure.
+
+

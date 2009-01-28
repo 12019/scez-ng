@@ -1,0 +1,720 @@
+# Makefile for unix.
+
+# $Id: Makefile.orig 1056 2001-09-17 23:20:37Z m $
+
+# Port where reader is attached. This is used by all test programs.
+#
+# CT-API: Meaning of port is driver specific. The linux/solaris CT-API
+#    drivers normaly use port 0-3 for COM 1-4.
+#
+# Dumbmouse,Towitoko: "1","2","3","4" is substituted by the device name
+#    of the serial port. See sc_reader.c. If no apropriate substitution
+#    devices are available READER_PORT can contain the full devicename.
+
+PORT=-DREADER_PORT=\\\"0\\\"
+#PORT=-DREADER_PORT=\\\"1\\\"
+#PORT=-DREADER_PORT=\\\"2\\\"
+#PORT=-DREADER_PORT=\\\"3\\\"
+
+# Reader type
+
+#TYPE=-DREADER_TYPE=SC_READER_ACR20
+#TYPE=-DREADER_TYPE=SC_READER_B1
+#TYPE=-DREADER_TYPE=SC_READER_CTAPI
+TYPE=-DREADER_TYPE=SC_READER_DUMBMOUSE
+#TYPE=-DREADER_TYPE=SC_READER_GCR400
+#TYPE=-DREADER_TYPE=SC_READER_REFLEX60
+#TYPE=-DREADER_TYPE=SC_READER_TOWITOKO
+
+# Card slot in reader
+# 
+# CT-API: The linux/solaris CT-API drivers normaly use slot 0.
+# Dumb Mouse: Slot 1.
+# Towitoko: Currently only slot 1.
+
+#SLOT=-DREADER_SLOT=0
+SLOT=-DREADER_SLOT=1
+#SLOT=-DREADER_SLOT=2
+
+# RESPECTS_LE: When defined my T=1 implementation limits response
+#     length to Le bytes. This is how I understand ISO7816-4 5.3
+#     and A 2S, A 4S.
+
+#RLE=-DRESPECTS_LE
+
+# NO_APDU_CHECK: When defined my T=1 implementation is not so
+#     pedantic with APDU cases.
+
+#CHK=-DNO_APDU_CHECK
+
+# READER_DEBUG: Prints communication data to stdout.
+#
+
+#RDBG=-DREADER_DEBUG -DSO_ONLY_TEST
+
+# TOWITOKO_LOW_POWER
+#
+# For some cards and Towitoko Chipdrives which get their power only form
+# the serial port, there needs to be a longer pause after turning on the
+# reader. You have then to set this define. But it may be, that even this
+# is not enough to get a power draining card working.
+# This define does not hurt, if the Chipdrive has another power supply,
+# but you will need more patience.
+
+TLP=-DTOWITOKO_LOW_POWER
+
+# CRYPTLIBPATH: Path to cryptlib.
+#
+
+CRYPTLIBPATH=/usr/local/lib
+
+##########################################################################
+#              Probably no changes needed after this.                    #
+##########################################################################
+
+DEBUG=#-DREADER_DEBUG #-g #-DREADER_DEBUG #-DREFLEX60_DEBUG #-DACR20_DEBUG
+
+LIBDES_DEF=-DWITH_DES -DWITH_LIBDES
+CRYPTLIB_DEF=-I$(CRYPTLIBPATH) -DWITH_DES -DWITH_CRYPTLIB
+OPENSSL_DEF= -I/usr/include/openssl -DWITH_DES -DWITH_OPENSSL
+
+DEFINES=$(DEBUG) $(PORT) $(TYPE) $(SLOT) $(RLE) $(CHK) $(RDBG) $(TLP)
+LDFLAGS=
+
+VERSION=`date +%Y%m%d`
+TARFILE=scez-$(VERSION).tar
+ZIPFILE=scez-$(VERSION).zip
+COMPRESS=gzip
+RPMROOT=$(HOME)/rpm
+
+SRCS= \
+	scacr20.c \
+	scbasiccard.c \
+	scbluedot.c \
+	sccryptoflex.c \
+	scctapi.c \
+	sccyberflex.c \
+	scdumbmouse.c \
+	scgcr400.c \
+	scgeldkarte.c \
+	scgeneral.c \
+	scgpk4000.c \
+	scgpr400.c \
+	scgsmsim.c \
+	scintertex.c \
+	scmfc.c	\
+	scmultiflex.c \
+	scopenplatform.c \
+	scproton.c \
+	scpts.c \
+	scquick.c \
+	screader.c \
+	screflex60.c \
+	scsmartcard.c \
+	scsmartcafe.c \
+	scstarcos.c \
+	sct0.c \
+	sct1.c \
+	sctcos.c \
+	sctowitoko.c
+
+OBJS=$(SRCS:.c=.o)
+
+HDRS= \
+	scacr20.h \
+	scbasiccard.h \
+	scbluedot.h \
+	sccryptoflex.h \
+	scctapi.h \
+	sccyberflex.h \
+	scdumbmouse.h \
+	scgcr400.h \
+	scgeldkarte.h \
+	scgeneral.h \
+	scgpk4000.h \
+	scgpr400.h \
+	scgsmsim.h \
+	scintertex.h \
+	scmacros.h \
+	scmfc.h \
+	scmultiflex.h \
+	scopenplatform.h \
+	scproton.h \
+	scpts.h \
+	scquick.h \
+	screader.h \
+	screflex60.h \
+	scsmartcard.h \
+	scsmartcafe.h \
+	scstarcos.h \
+	sct0.h \
+	sct1.h \
+	sctcos.h \
+	sctowitoko.h
+
+SSRCS= \
+	sio.c \
+	slog.c
+
+SOBJS=$(SSRCS:.c=.o)
+
+SHDRS= \
+	platform.h \
+	sio.h \
+	slog.h \
+	varadic.h
+
+SLSRCS= \
+	siolight.c
+
+SLOBJS=$(SLSRCS:.c=.o)
+
+SLHDRS= \
+	siolight.h
+
+OSRCS= \
+	bcupload.c \
+	cafeman.c \
+	cardcheck.c \
+	crdetect.c \
+	cfupload.c \
+	cyflexman.c \
+	flexpasswd.c \
+	gendivkey.c \
+	getcert.c \
+	scanclains.c \
+	scdir.c \
+	scsh.c \
+	scwait.c \
+	simdump.c \
+	simman.c \
+	simparse.c \
+	tacr20.c \
+	tbasiccard.c \
+	tbluedot.c \
+	tbradesco.c \
+	tcfkeygen.c \
+	tcryptoflex.c \
+	tctapi.c \
+	tcyberflex.c \
+	tdumbmouse.c \
+	tgpk4000.c \
+	tgsmsim.c \
+	tmultiflex.c \
+	treflex60.c \
+	tsmartcafe.c \
+	tsmartcard.c \
+	ttcos.c \
+	ttowitoko.c
+
+OHDRS= \
+	simman.h
+
+OOBJS=$(OSRCS:.c=.o)
+
+PSRCS= \
+	p15cryptoflex.c
+
+PHDRS= \
+	p15cryptoflex.h \
+	p15general.h
+
+POBJS=$(PSRCS:.c=.o)
+
+POSRCS= \
+	tp15cryptoflex.c
+
+POOBJS=$(POSRCS:.c=.o)
+
+OTHER= \
+	COPYING \
+	COPYRIGHT \
+	COPYRIGHT.sio \
+	Makefile \
+	Makefile.palm \
+	Makefile.vc5 \
+	PORTING.sio \
+	README \
+	README.sio \
+	VERSION.sio \
+	cttest.c \
+	keeper-1.0.tar.gz \
+	libdes-4.01.spec \
+	libdes-4.01-shared.patch \
+	makeprc \
+	makestub \
+	scez.spec.in \
+	scez-$(VERSION).spec \
+	scpayflex.c \
+	scpayflex.h \
+	bc/test/compile.bat \
+	bc/test/test.bas \
+	bc/test/testc.img \
+	bc/test/teste.img \
+	bluedot/adapter.h \
+	bluedot/cibtypes.h \
+	bluedot/jibapi.h \
+	bluedot/jibapi.a \
+	dox/bradesco.txt \
+	dox/cttest.txt \
+	dox/cttest1.log \
+	dox/cttest2.log \
+	dox/cttest3.log \
+	dox/dumbmouse.txt \
+	dox/example.c \
+	dox/geldkarte.txt \
+	dox/hierarchy.obj \
+	dox/hierarchy.ps \
+	dox/multiflex.tex \
+	dox/netkey.txt \
+	dox/newfunctionstr.txt \
+	dox/newfunctionstr-2.txt \
+	dox/quick.txt \
+	dox/scez.pdf \
+	dox/scez.tex \
+	dox/scez.texi \
+	dox/simman.txt \
+	dox/sio.html \
+	dox/timings.txt \
+	dox/xerox-mfc41.txt \
+	icons/scez-16-14.png \
+	icons/scez-32-28.png \
+	icons/scez-72-64.png \
+	icons/scez-sign.obj \
+	icons/scez-symbol.obj \
+	icons/scez.png \
+	libdes/COPYRIGHT \
+	libdes/README \
+	libdes/des.h \
+	libdes/des.lib \
+	libdes/des.mak \
+	palm/Libc.prc \
+	palm/pilotSSLeay-2.01/ChangeLog \
+	palm/pilotSSLeay-2.01/DESLib.prc \
+	palm/pilotSSLeay-2.01/README \
+	palm/pilotSSLeay-2.01/des.exp \
+	palm/pilotSSLeay-2.01/des.h \
+	palm/pilotSSLeay-2.01/libdes.sa \
+	palm/scdir/Makefile \
+	palm/scdir/callback.h \
+	palm/scdir/scdir.c \
+	palm/scdir/scdir.h \
+	palm/scdir/scdir.bmp \
+	palm/scdir/scdir.rcp \
+	perl5/Makefile \
+	perl5/README \
+	perl5/scez.i \
+	perl5/tpscez.pl \
+	pkcs15/p15cryptoflex.txt
+
+CTFILES= \
+	cttest.c \
+	cttest.exe \
+	dox/cttest.txt \
+	dox/cttest1.log \
+	dox/cttest2.log \
+	dox/cttest3.log
+
+#default: FreeBSD-openssl
+	
+systems:
+	@echo "Parameters:"
+	@echo ""
+	@echo "   Palm"
+	@echo ""
+	@echo "   <system>"
+	@echo "   <system>-libdes"
+	@echo "   <system>-cryptlib"
+	@echo "   <system>-openssl"
+	@echo ""
+	@echo "With system:"
+	@echo ""
+	@echo "   Linux, FreeBSD, HP-UX, IRIX, OSF1"
+
+all: $(LIBSCEZ) $(LIBSIO) progs
+
+all-libdes: $(LIBSCEZ) $(LIBSIO) progs desprogs
+
+all-cryptlib: $(LIBSCEZ) $(LIBP15) p15progs progs desprogs
+
+all-openssl: $(LIBSCEZ) $(LIBSIO) progs desprogs
+
+libscez.a: $(OBJS)
+	ar r libscez.a $(OBJS)
+	-if test -s /bin/ranlib; then /bin/ranlib libscez.a; \
+	else if test -s /usr/bin/ranlib; then /usr/bin/ranlib libscez.a; \
+	else exit 0; fi; fi
+
+libscez.so: $(OBJS) libscez.a
+	ld -x --shared -o libscez.so $(OBJS)
+
+libpkcs15.a: $(POBJS)
+	ar r libpkcs15.a $(POBJS)
+	-if test -s /bin/ranlib; then /bin/ranlib libpkcs15.a; \
+	else if test -s /usr/bin/ranlib; then /usr/bin/ranlib libpkcs15.a; \
+	else exit 0; fi; fi
+
+libpkcs15.so: $(POBJS)
+	ld -x --shared -o libpkcs15.so $(POBJS)
+
+libsio.a: $(SOBJS)
+	ar r libsio.a $(SOBJS)
+	-if test -s /bin/ranlib; then /bin/ranlib libsio.a; \
+	else if test -s /usr/bin/ranlib; then /usr/bin/ranlib libsio.a; \
+	else exit 0; fi; fi
+
+libsio.so: $(SOBJS) libsio.a
+	ld -x --shared -o libsio.so $(SOBJS)
+
+libsiolight.a: $(SLOBJS)
+	ar r libsiolight.a $(SLOBJS)
+	-if test -s /bin/ranlib; then /bin/ranlib libsiolight.a; \
+	else if test -s /usr/bin/ranlib; then /usr/bin/ranlib libsiolight.a; \
+	else exit 0; fi; fi
+
+libsiolight.so: $(SLOBJS)
+	ld -x --shared -o libsiolight.so $(SLOBJS)
+
+progs: \
+	tacr20 \
+	tbasiccard \
+	tbluedot \
+	tbradesco \
+	tcfkeygen \
+	tcryptoflex \
+	tctapi \
+	tcyberflex \
+	tdumbmouse \
+	tgpk4000 \
+	tgsmsim \
+	tmultiflex \
+	treflex60 \
+	tsmartcafe \
+	tsmartcard \
+	ttcos \
+	ttowitoko \
+	bcupload \
+	cardcheck \
+	cfupload \
+	crdetect \
+	flexpasswd \
+	getcert \
+	scanclains \
+	scdir \
+	scsh \
+	scwait \
+	simdump \
+	simman
+
+desprogs: \
+	cafeman \
+	cyflexman \
+	gendivkey
+
+p15progs: \
+	tp15cryptoflex
+
+tacr20: $(LIBSCEZ) tacr20.o
+	$(CC) $(CFLAGS) -o tacr20 tacr20.o $(LIBS)
+
+tbasiccard: $(LIBSCEZ) tbasiccard.o
+	$(CC) $(CFLAGS) -o tbasiccard tbasiccard.o $(LIBS)
+
+tbluedot: $(LIBSCEZ) tbluedot.o
+	$(CC) $(CFLAGS) -o tbluedot tbluedot.o $(LIBS)
+
+tbradesco: $(LIBSCEZ) tbradesco.o
+	$(CC) $(CFLAGS) -o tbradesco tbradesco.o $(LIBS)
+
+tcfkeygen: $(LIBSCEZ) tcfkeygen.o
+	$(CC) $(CFLAGS) -o tcfkeygen tcfkeygen.o $(LIBS)
+
+tcryptoflex: $(LIBSCEZ) tcryptoflex.o
+	$(CC) $(CFLAGS) -o tcryptoflex tcryptoflex.o $(LIBS)
+
+tctapi: $(LIBSCEZ) tctapi.o
+	$(CC) $(CFLAGS) -o tctapi tctapi.o $(LIBS)
+
+tcyberflex: $(LIBSCEZ) tcyberflex.o
+	$(CC) $(CFLAGS) -o tcyberflex tcyberflex.o $(LIBS)
+
+tdumbmouse: $(LIBSCEZ) tdumbmouse.o
+	$(CC) $(CFLAGS) -o tdumbmouse tdumbmouse.o $(LIBS)
+
+tgpk4000: $(LIBSCEZ) tgpk4000.o
+	$(CC) $(CFLAGS) -o tgpk4000 tgpk4000.o $(LIBS)
+
+tgsmsim: $(LIBSCEZ) tgsmsim.o
+	$(CC) $(CFLAGS) -o tgsmsim tgsmsim.o $(LIBS)
+
+tmultiflex: $(LIBSCEZ) tmultiflex.o
+	$(CC) $(CFLAGS) -o tmultiflex tmultiflex.o $(LIBS)
+
+treflex60: $(LIBSCEZ) treflex60.o
+	$(CC) $(CFLAGS) -o treflex60 treflex60.o $(LIBS)
+
+tsmartcafe: $(LIBSCEZ) tsmartcafe.o
+	$(CC) $(CFLAGS) -o tsmartcafe tsmartcafe.o $(LIBS)
+
+tsmartcard: $(LIBSCEZ) tsmartcard.o
+	$(CC) $(CFLAGS) -o tsmartcard tsmartcard.o $(LIBS)
+
+ttcos: $(LIBSCEZ) ttcos.o
+	$(CC) $(CFLAGS) -o ttcos ttcos.o $(LIBS)
+
+ttowitoko: $(LIBSCEZ) ttowitoko.o
+	$(CC) $(CFLAGS) -o ttowitoko ttowitoko.o $(LIBS)
+
+bcupload: $(LIBSCEZ) bcupload.o
+	$(CC) $(CFLAGS) -o bcupload bcupload.o $(LIBS)
+
+cafeman: $(LIBSCEZ) cafeman.o
+	$(CC) $(CFLAGS) -o cafeman cafeman.o $(LIBS)
+
+cardcheck: $(LIBSCEZ) cardcheck.o
+	$(CC) $(CFLAGS) -o cardcheck cardcheck.o $(LIBS)
+
+cfupload: $(LIBSCEZ) cfupload.o
+	$(CC) $(CFLAGS) -o cfupload cfupload.o $(LIBS)
+
+crdetect: $(LIBSCEZ) crdetect.o
+	$(CC) $(CFLAGS) -o crdetect crdetect.o $(LIBS)
+
+cttest: $(LIBSCEZ) cttest.o
+	$(CC) $(CFLAGS) -o cttest cttest.o $(LIBS) -ldl
+
+cyflexman: $(LIBSCEZ) cyflexman.o
+	$(CC) $(CFLAGS) -o cyflexman cyflexman.o $(LIBS)
+
+flexpasswd: $(LIBSCEZ) flexpasswd.o
+	$(CC) $(CFLAGS) -o flexpasswd flexpasswd.o $(LIBS)
+
+getcert: $(LIBSCEZ) getcert.o
+	$(CC) $(CFLAGS) -o getcert getcert.o $(LIBS)
+
+scanclains: $(LIBSCEZ) scanclains.o
+	$(CC) $(CFLAGS) -o scanclains scanclains.o $(LIBS)
+
+scdir: $(LIBSCEZ) scdir.o
+	$(CC) $(CFLAGS) -o scdir scdir.o $(LIBS)
+
+scsh: $(LIBSCEZ) scsh.o
+	$(CC) $(CFLAGS) -o scsh scsh.o $(LIBS)
+
+scwait: $(LIBSCEZ) scwait.o
+	$(CC) $(CFLAGS) -o scwait scwait.o $(LIBS)
+
+simdump: $(LIBSCEZ) simdump.o
+	$(CC) $(CFLAGS) -o simdump simdump.o $(LIBS)
+
+simman: $(LIBSCEZ) simman.o simparse.o
+	$(CC) $(CFLAGS) -o simman simman.o simparse.o $(LIBS)
+
+gendivkey: gendivkey.o
+	$(CC) $(CFLAGS) -o gendivkey gendivkey.o $(LIBS)
+
+tp15cryptoflex: $(LIBSCEZ) libpkcs15.a tp15cryptoflex.o
+	$(CC) $(CFLAGS) -o tp15cryptoflex tp15cryptoflex.o $(LIBS)
+
+test: $(LIBSCEZ) test.o
+	$(CC) $(CFLAGS) $(READER) -o test test.o $(LIBS)
+
+##########################################################################
+
+# Linux 2.x
+Linux:
+	@make all CC=gcc CFLAGS="$(DEFINES) -fPIC -Wall -O3" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio -ldl -lkeeper" LIBSCEZ=libscez.so \
+		LIBSIO=libsio.so
+
+Linux-libdes:
+	@make all-libdes CC=gcc CFLAGS="$(DEFINES) -fPIC -Wall -O3 $(LIBDES_DEF)" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio -ldl -ldes -lkeeper bluedot/jibapi.a" \
+		LIBSCEZ=libscez.so LIBSIO=libsio.so
+
+Linux-cryptlib:
+	@make all-cryptlib CC=gcc CFLAGS="$(DEFINES) -fPIC -Wall -O3 $(CRYPTLIB_DEF)" \
+		LIBS="$(LDFLAGS) -L$(CRYPTLIBPATH) -L. -lscez -ldl -lcrypt -lkeeper" \
+		LIBSCEZ=libscez.so
+
+Linux-openssl:
+	@make all-openssl CC=gcc CFLAGS="$(DEFINES) -fPIC -Wall -O3 $(OPENSSL_DEF)" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio -ldl -lcrypto -lkeeper" \
+		LIBSCEZ=libscez.so LIBSIO=libsio.so
+
+# FreeBSD 2.x/NetBSD
+FreeBSD:
+	@make all CC=gcc CFLAGS="$(DEFINES) -O3" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio" LIBSCEZ=libscez.a LIBSIO=libsio.a
+
+FreeBSD-libdes:
+	@make all-libdes CC=gcc CFLAGS="$(DEFINES) -O3 $(LIBDES_DEF)" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio -ldes" LIBSCEZ=libscez.a LIBSIO=libsio.a
+
+FreeBSD-cryptlib:
+	@make all-cryptlib CC=gcc CFLAGS="$(DEFINES) -O3 $(CRYPTLIB_DEF)" \
+		LIBS="$(LDFLAGS) -L. -L$(CRYPTLIBPATH) -lscez -lcrypt" LIBSCEZ=libscez.a
+
+FreeBSD-openssl:
+	@make all-openssl CC=gcc CFLAGS="$(DEFINES) -O3 $(OPENSSL_DEF)" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio -lcrypto" LIBSCEZ=libscez.a \
+		LIBSIO=libsio.a
+
+# Alpha OSF/1
+OSF1:
+	@make all CC=cc CFLAGS="$(DEFINES) -O3 -std1 -Olimit 1500 -w1" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio" LIBSCEZ=libscez.a LIBSIO=libsio.a
+
+OSF1-libdes:
+	@make all-libdes CC=cc CFLAGS="$(DEFINES) -O3 -std1 -Olimit 1500 -w1 $(LIBDES_DEF)" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio -ldes" LIBSCEZ=libscez.a LIBSIO=libsio.a
+
+OSF1-cryptlib:
+	@make all-cryptlib CC=cc CFLAGS="$(DEFINES) -O3 -std1 -Olimit 1500 -w1 \
+		$(CRYPTLIB_DEF)" LIBS="$(LDFLAGS) -L$(CRYPTLIBPATH) -L. -lscez -lcrypt" \
+		LIBSCEZ=libscez.a LIBSIO=libsio.a
+
+OSF1-openssl:
+	@make all-openssl CC=cc CFLAGS="$(DEFINES) -O3 -std1 -Olimit 1500 -w1 $(OPENSSL_DEF)" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio -lcrypto" LIBSCEZ=libscez.a \
+		LIBSIO=libsio.a
+
+# SGI IRIX
+IRIX:
+	@make all CC=cc CFLAGS="$(DEFINES) -O2 -Olimit 1500" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio" LIBSCEZ=libscez.a LIBSIO=libsio.a
+
+IRIX-libdes:
+	@make all-libdes CC=cc CFLAGS="$(DEFINES) -O2 -Olimit 1500 $(LIBDES_DEF)" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio -ldes" LIBSCEZ=libscez.a LIBSIO=libsio.a
+
+IRIX-cryptlib:
+	@make all-cryptlib CC=cc CFLAGS="$(DEFINES) -O2 -Olimit 1500 \
+		$(CRYPTLIB_DEF)" LIBS="$(LDFLAGS) -L$(CRYPTLIBPATH) -L. -lscez -lcrypt" \
+		LIBSCEZ=libscez.a LIBSIO=libsio.a
+
+IRIX-openssl:
+	@make all-openssl CC=cc CFLAGS="$(DEFINES) -O2 -Olimit 1500 $(OPENSSL_DEF)" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio -lcrypto" LIBSCEZ=libscez.a \
+		LIBSIO=libsio.a
+
+# HP HP-UX
+HP-UX:
+	@make all CC=cc CFLAGS="$(DEFINES) +O3 -Ae" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio" LIBSCEZ=libscez.a LIBSIO=libsio.a
+
+HP-UX-libdes:
+	@make all-libdes CC=cc CFLAGS="$(DEFINES) +O3 -Ae $(LIBDES_DEF)" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio -ldes" LIBSCEZ=libscez.a LIBSIO=libsio.a
+
+HP-UX-cryptlib:
+	@make all-cryptlib CC=cc CFLAGS="$(DEFINES) +O3 -Ae \
+		$(CRYPTLIB_DEF)" LIBS="$(LDFLAGS) -L$(CRYPTLIBPATH) -L. -lscez -lcrypt" \
+		LIBSCEZ=libscez.a LIBSIO=libsio.a
+
+HP-UX-openssl:
+	@make all-openssl CC=cc CFLAGS="$(DEFINES) +O3 -Ae $(OPENSSL_DEF)" \
+		LIBS="$(LDFLAGS) -L. -lscez -lsio -lcrypto" LIBSCEZ=libscez.a \
+		LIBSIO=libsio.a
+
+Palm:
+	make -f Makefile.palm
+
+# SunOS 5.x - aka Solaris 2.x
+#CC = cc
+#DEBUG = #-DREADER_DEBUG
+#CFLAGS = $(DEBUG) $(READER)
+#LIBS = -L. -lscez -lsio -ldes
+
+# OpenBSD
+#CC = gcc
+#DEBUG = -Wall #-DREADER_DEBUG
+#CFLAGS = -DOPENBSD -DUSE_TERMIOS $(DEBUG) $(READER)
+#LIBS = -L. -lscez -lsio -ldes
+
+# SCO 
+#CC = cc
+#DEBUG = #-DREADER_DEBUG
+#CFLAGS = -DSCO $(DEBUG)
+#LIBS = -L. -lscez -lsio -ldes
+
+##########################################################################
+
+clean:
+	/bin/rm -f *.o libscez.a libpkcs15.a libsio.a libsiolight.a core
+	/bin/rm -f libscez.so libpkcs15.so libsio.so libsiolight.so
+	/bin/rm -f tbasiccard tcfkeygen tcryptoflex tctapi tdumbmouse
+	/bin/rm -f tgpk4000 tgsmsim tmultiflex tsmartcard ttcos ttowitoko
+	/bin/rm -f tp15cryptoflex tbradesco tacr20 tcyberflex treflex60
+	/bin/rm -f tsmartcafe tbluedot
+	/bin/rm -f bcupload crdetect cttest flexpasswd gendivkey getcert scdir
+	/bin/rm -f scwait scsh cafeman
+	/bin/rm -f simdump simman test cardcheck cfupload cyflexman scanclains
+	/bin/rm -f *.obj *.exe scez.lib sio.lib
+	/bin/rm -f cttest-*.tar scez-*.tar
+	make -f Makefile.palm clean
+
+mrproper: clean
+	/bin/rm -f scez-*
+
+tar:
+	/bin/rm -f $(TARFILE) $(TARFILE).Z $(TARFILE).gz scez-*.spec
+	mkdir scez-$(VERSION)
+	sed -e "s/DATE/$(VERSION)/" <scez.spec.in >scez-$(VERSION).spec
+	tar cf - $(SRCS) $(HDRS) $(SSRCS) $(SHDRS) $(SLSRCS) $(SLHDRS) \
+		$(OSRCS) $(OHDRS) $(PSRCS) $(PHDRS) $(OTHER) | tar xvfC - \
+		scez-$(VERSION)
+	tar cvf $(TARFILE) scez-$(VERSION)
+	rm -rf scez-$(VERSION)
+	$(COMPRESS) $(TARFILE)
+
+tar-1.0:
+	/bin/rm -f scez-1.0.tar scez-1.0.tar.Z scez-1.0.tar.gz scez-*.spec
+	mkdir scez-1.0
+	sed -e "s/DATE/1.0/" <scez.spec.in >scez-1.0.spec
+	tar cf - $(SRCS) $(HDRS) $(SSRCS) $(SHDRS) $(SLSRCS) $(SLHDRS) \
+		$(OSRCS) $(OHDRS) $(PSRCS) $(PHDRS) $(OTHER) | tar xvfC - \
+		scez-1.0
+	tar cvf scez-1.0.tar scez-1.0
+	rm -rf scez-1.0
+	$(COMPRESS) scez-1.0.tar
+
+zip:
+	/bin/rm -f $(ZIPFILE) scez-*.spec
+	sed -e "s/DATE/$(VERSION)/" <scez.spec.in >scez-$(VERSION).spec
+	zip -9 $(ZIPFILE) $(SRCS) $(HDRS) $(SSRCS) $(SHDRS) $(SLSRCS) $(SLHDRS) \
+		$(OSRCS) $(OHDRS) $(PSRCS) $(PHDRS) $(OTHER)
+
+rpm: tar
+	cp $(TARFILE).gz $(RPMROOT)/SOURCES/
+	cp scez-$(VERSION).spec $(RPMROOT)/SPECS/
+	rpm -ba --clean --rmsource $(RPMROOT)/SPECS/scez-$(VERSION).spec
+	rm $(RPMROOT)/SPECS/scez-$(VERSION).spec
+	mv $(RPMROOT)/SRPMS/scez-$(VERSION)-1.src.rpm .
+	mv $(RPMROOT)/RPMS/i386/scez-$(VERSION)-1.i386.rpm .
+	rpm --addsign scez-$(VERSION)-1.src.rpm scez-$(VERSION)-1.i386.rpm
+
+rpm-1.0: tar-1.0
+	cp scez-1.0.tar.gz $(RPMROOT)/SOURCES/
+	cp scez-1.0.spec $(RPMROOT)/SPECS/
+	rpm -ba --clean --rmsource $(RPMROOT)/SPECS/scez-1.0.spec
+	rm $(RPMROOT)/SPECS/scez-1.0.spec
+	mv $(RPMROOT)/SRPMS/scez-1.0-1.src.rpm .
+	mv $(RPMROOT)/RPMS/i386/scez-1.0-1.i386.rpm .
+	rpm --addsign scez-1.0-1.src.rpm scez-1.0-1.i386.rpm
+
+tag:
+	cvs tag scez-$(VERSION)
+
+Palm-tar:
+	make -f Makefile.palm tar
+
+Palm-zip:
+	make -f Makefile.palm zip
+
+cttest-tar:
+	/bin/rm -f cttest-$(VERSION).tar.* cttest-$(VERSION).tar
+	tar cf cttest-$(VERSION).tar $(CTFILES)
+	$(COMPRESS) cttest-$(VERSION).tar
+
+

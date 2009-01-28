@@ -1,0 +1,199 @@
+// Palm Smart Card Dir
+
+#include "scdir.h"
+
+APPLICATIONICONNAME ID 1 "SCEZ SCDir"
+APPLICATION ID 1 "Scl8"
+VERSION ID 1 "0.3"
+ICON "scdir.bmp"
+
+TRANSLATION "GERMAN"
+BEGIN
+	"UPDATE" = "Auslesen"
+	"EDIT MENU" = "Bearbeiten"
+	"COPY ITEM" = "Kopieren"
+	"SELECT ALL ITEM" = "Alles Auswählen"
+	"OPTION MENU" = "Optionen"
+	"READER ITEM" = "Kartenleser..."
+	"HELP MENU" = "Hilfe"
+	"HELP ITEM" = "Hilfe..."
+	"ABOUT ITEM" = "Über..."
+	"OK" = "OK"
+	"CANCEL" = "Abbrechen"
+	"LIB ERROR" = "Bibliotheksfehler"
+	"LIB ERROR OCCURED" = "Es ist ein Fehler in der Chipkartenbibliothek "\
+		"aufgetreten."
+	"READER ERROR" = "Kartenleserfehler"
+	"READER ERROR OCCURED" = "Es ist ein Fehler beim Zugriff auf den "\
+		"Kartenleser aufgetreten. Überprüfen Sie die Verbindung ihres "\
+		"Palm Pilots zum Kartenleser."
+	"NO CARD" = "Keine Karte"
+	"NO CARD IN SLOT" = "Es wurde keine Chipkarte im Kartenleser gefunden."
+	"CARD ERROR" = "Kartenfehler"
+	"CARD ERROR OCCURED" = "Es ist ein Fehler auf der Karte oder beim "\
+		"Datenaustausch mit der Karte aufgetreten."
+	"UNKNOWN ERROR" = "Unbekannter Fehler"
+	"UNKNOWN ERROR OCCURED" = "Es ist ein unbekannter Fehler aufgetreten."
+	"UNSEL READER" = "Kartenleser"
+	"NO READER SELECTED" = "Es ist kein Kartenleser angewählt.\nSie können "\
+		"dies im Optionen-Menü durchführen."
+	"ABOUT SCDIR" = "Über SCDir"
+	"ABOUT SCDIR MESSAGE" = "SCEZ SCDir v0.2\n"\
+		"http://www.franken.de/crypt/scez.html\n(c) 1999, Matthias Brüstle\n"\
+		"SIO: (c) 1993-1997, Tim Hudson\n"\
+		"Diese Software wird unter einer BSD-artigen Lizenz vertrieben."
+	"SCDIR HELP" = "SCDir Hilfe"
+	"SCDIR HELP MESSAGE" = "Smart Card Dir zeigt Informationen über "\
+		"Prozessorchipkarten an.\nDrücken Sie auf den Auslesen-Button "\
+		"um die Daten der momentan eingesteckten Karte auszulesen."
+	"SELECT READER TITLE" = "Auswahl des Kartenlesers"
+END
+
+TRANSLATION "ENGLISH"
+BEGIN
+	"UPDATE" = "Update"
+	"EDIT MENU" = "Edit"
+	"COPY ITEM" = "Copy"
+	"SELECT ALL ITEM" = "Select All"
+	"OPTION MENU" = "Options"
+	"READER ITEM" = "Cardreader..."
+	"HELP MENU" = "Help"
+	"HELP ITEM" = "Help..."
+	"ABOUT ITEM" = "About..."
+	"OK" = "OK"
+	"CANCEL" = "Cancel"
+	"LIB ERROR" = "Library error"
+	"LIB ERROR OCCURED" = "An error occured in the chipcard library."
+	"READER ERROR" = "Cardreader error"
+	"READER ERROR OCCURED" = "An error occured accessing the cardreader. "\
+		"Check the connection between the Palm Pilot and the cardreader."
+	"NO CARD" = "No card"
+	"NO CARD IN SLOT" = "No card was found in the cardreader."
+	"CARD ERROR" = "Card error"
+	"CARD ERROR OCCURED" = "An error occured on the chipcard or while "\
+		"communicating with the chipcard."
+	"UNKNOWN ERROR" = "Unknown error"
+	"UNKNOWN ERROR OCCURED" = "An unknown error occured."
+	"UNSEL READER" = "Cardreader"
+	"NO READER SELECTED" = "No cardreader is selected.\nYou can select a "\
+		"cardreader in the Options menu."
+	"ABOUT SCDIR" = "About SCDir"
+	"ABOUT SCDIR MESSAGE" = "SCEZ SCDir v0.2\n"\
+		"http://www.franken.de/crypt/scez.html\n(c) 1999, Matthias Brüstle\n"\
+		"SIO: (c) 1993-1997, Tim Hudson\n"\
+		"This software is distributed under a BSD style licence."
+	"SCDIR HELP" = "SCDir Help"
+	"SCDIR HELP MESSAGE" = "Smart Card Dir shows informationen about "\
+		"processor chipcards.\nPress the Update button to read out the "\
+		"data of the currently inserted card."
+	"SELECT READER TITLE" = "Select cardreader"
+END
+
+//	FIELD ID dataFieldID AT (5 20 160-10-10 147-5-20) USABLE LEFTALIGN NONEDITABLE MULTIPLELINES
+//	SCROLLBAR ID dataSbarID AT (PREVRIGHT+4 PREVTOP 7 PREVHEIGHT) USABLE
+
+FORM ID mainFormID AT (0 0 160 160)
+NOFRAME
+USABLE
+MENUID mainMenuID
+BEGIN
+	TITLE "SCEZ Smart Card Dir"
+	FIELD ID dataFieldID AT (0 20 160-10 147-5-20) USABLE LEFTALIGN NONEDITABLE MULTIPLELINES
+	SCROLLBAR ID dataSbarID AT (PREVRIGHT+3 PREVTOP 7 PREVHEIGHT) USABLE
+	BUTTON "UPDATE" ID updateButtonID AT (CENTER 147 AUTO AUTO) USABLE FRAME
+END
+
+MENU mainMenuID
+BEGIN
+	PULLDOWN "EDIT MENU"
+	BEGIN
+		MENUITEM "COPY ITEM" copyMenuID "C"
+		MENUITEM "SELECT ALL ITEM" selectMenuID "S"
+	END
+	PULLDOWN "OPTION MENU"
+	BEGIN
+		MENUITEM "READER ITEM" readerMenuID "R"
+	END
+	PULLDOWN "HELP MENU"
+	BEGIN
+		MENUITEM "HELP ITEM" helpMenuID "H"
+		MENUITEM "ABOUT ITEM" aboutMenuID "A"
+	END
+END
+
+ALERT ID alert1FormID
+ERROR
+BEGIN
+	TITLE "LIB ERROR"
+	MESSAGE "LIB ERROR OCCURED"
+	BUTTONS "OK"
+END
+
+ALERT ID alert2FormID
+ERROR
+BEGIN
+	TITLE "READER ERROR"
+	MESSAGE "READER ERROR OCCURED"
+	BUTTONS "OK"
+END
+
+ALERT ID alert3FormID
+ERROR
+BEGIN
+	TITLE "NO CARD"
+	MESSAGE "NO CARD IN SLOT"
+	BUTTONS "OK"
+END
+
+ALERT ID alert4FormID
+ERROR
+BEGIN
+	TITLE "CARD ERROR"
+	MESSAGE "CARD ERROR OCCURED"
+	BUTTONS "OK"
+END
+
+ALERT ID alert5FormID
+ERROR
+BEGIN
+	TITLE "UNKNOWN ERROR"
+	MESSAGE "UNKNOWN ERROR OCCURED"
+	BUTTONS "OK"
+END
+
+ALERT ID alert6FormID
+ERROR
+BEGIN
+	TITLE "UNSEL READER"
+	MESSAGE "NO READER SELECTED"
+	BUTTONS "OK"
+END
+
+ALERT ID aboutFormID
+INFORMATION
+BEGIN
+	TITLE "ABOUT SCDIR"
+	MESSAGE "ABOUT SCDIR MESSAGE"
+	BUTTONS "OK"
+END
+
+ALERT ID helpFormID
+INFORMATION
+BEGIN
+	TITLE "SCDIR HELP"
+	MESSAGE "SCDIR HELP MESSAGE"
+	BUTTONS "OK"
+END
+
+FORM ID readerFormID AT (2 50+2-6 160-4 110-4+6)
+FRAME
+MODAL
+USABLE
+BEGIN
+	TITLE "SELECT READER TITLE"
+	LIST "Dumb Mouse" "Towitoko" ID readerListID AT(5+2 15+5 160-4-10-4 AUTO) USABLE VISIBLEITEMS 6
+	BUTTON "OK" ID readerOkButtonID AT (PREVLEFT 110-4-7-5 AUTO AUTO) USABLE FRAME
+	BUTTON "CANCEL" ID readerCancleButtonID AT (PREVRIGHT+5 PREVTOP AUTO AUTO) USABLE FRAME
+END
+
+

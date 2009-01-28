@@ -1,0 +1,375 @@
+PKCS#15 General Interface
+=========================
+
+
+I want to to do a card independant interface for PKCS#15. The functions
+should make it easy to implement PKCS#15 and handle every card specific
+detail. The above programm should work without changes with a Schlumberger
+Cryptoflex, when the Cryptoflex-Module is used, with a Gemplus GPK4000,
+when the GPK4000-Module is used, and with every other supported card. The
+module selection should be automatically, like the reader module selection
+in SCEZ. Suggestions, comments, improvements are welcome.
+
+
+Structures
+----------
+
+See p15general.h.
+
+
+Functions
+---------
+
+
+/* Initialize card. */
+int p15CardInit( P15_INFO *pi, char *label, char *manufId, BYTE *sn,
+	int snlen );
+
+	/* Data for EF(DIR). */
+	efdirdata = [ AID="\xA0\x00\x00\x00\x63PKCS-15", Path=3F005015,
+		Label=label ];
+
+	/* Data for EF(TokenInfo). */
+	eftidata = [ Version=0, SN=sn, ManufID=manufId, Label=label, Tokenflags=[
+		prnGeneration, eidCompliant ], recordInfo=[ oDFRecLen=AA,
+		prKDFRecLen=BB, aODFRecLen=CC, cDFRecLen=DD (maybe others,
+		AA,BB,CC,DD are predefined) ], supportedAlgos=[ AlgInfo=[ refrence=n,
+		algo=0, param=NULL, operations=[ compute-signature, decipher,
+		generate-key ] ] ] ]
+
+	scCryptoflexCmdSelectFile( pi->ri, pi->ci, 0x3F00, buffer, &resplen );
+
+	scCryptoflexCmdGetChall( pi->ri, pi->ci, chall, &resplen=8 );
+
+	/* Authenticate with SO key. */
+	scCryptoflexCmdExtAuth( pi->ri, pi->ci, 0x01, pi->sokey, chall,
+		SC_CRYPTOFLEX_ALGO_DES );
+
+	/* Create EF(DIR). */
+	scCryptoflexCmdCreateFile( pi->ri, pi->ci, 0x2F00, flen=XX,
+		SC_CRYPTOFLEX_FILE_TRANSPARENT, 0x00, SC_CRYPTOFLEX_UNBLOCKED,
+		0x00, 0x00, acond, akeys );
+
+	/* Write data to EF(DIR). */
+	scCryptoflexCmdUpdateBinary( pi->ri, pi->ci, 0, efdirdata, datalen );
+
+	scCryptoflexCmdSelectFile( pi->ri, pi->ci, 0x3F00, buffer, &resplen );
+
+	/* Create DF(PKCS15). Grab all available space. */
+	scCryptoflexCmdCreateFile( pi->ri, pi->ci, 0x5015, flen from response
+		of Select File, SC_CRYPTOFLEX_FILE_DIRECTORY, 0x00,
+		SC_CRYPTOFLEX_UNBLOCKED, 0x00, 0x00, acond, akeys );
+
+	/* Create EF(PIN). */
+	scCryptoflexCmdCreateFile( pi->ri, pi->ci, 0x0000, flen=23,
+		SC_CRYPTOFLEX_FILE_TRANSPARENT, 0x00, SC_CRYPTOFLEX_UNBLOCKED,
+		0x00, 0x00, acond, akeys );
+
+	/* Initilaize EF(PIN). */
+	scCryptoflexCmdUpdateBinary( pi->ri, pi->ci, 0, efpindata, datalen );
+
+	Set pi->*pin*.
+
+	scCryptoflexCmdSelectFile( pi->ri, pi->ci, 0x5015, buffer, &resplen );
+
+	/* Create EF(TokenInfo). */
+	scCryptoflexCmdCreateFile( pi->ri, pi->ci, 0x5032, flen=XX,
+		SC_CRYPTOFLEX_FILE_VARIABLE, 0x00, SC_CRYPTOFLEX_UNBLOCKED,
+		0x00, 0x00, acond, akeys );
+
+	/* Write Data to EF(TokenInfo). */
+	scCryptoflexCmdCreateRecord( pi->ri, pi->ci, eftidata, eftidatalen );
+
+	scCryptoflexCmdSelectFile( pi->ri, pi->ci, 0x5015, buffer, &resplen );
+
+	/* Create EF(UnusedSpace). */
+	scCryptoflexCmdCreateFile( pi->ri, pi->ci, 0x5033, flen=XX,
+		SC_CRYPTOFLEX_FILE_FIXED, 0x00, SC_CRYPTOFLEX_UNBLOCKED,
+		reclen=XX, recnum=XX, acond, akeys );
+
+	/* Initialize EF(UnusedSpace) with empty records. */
+	for( i=1; i<=recnum; i++ )
+	scCryptoflexCmdUpdateRecord( pi->ri, pi->ci, i,
+		SC_CRYPTOFLEX_RECORD_CURR_INDEX, "\x00\xXX", 2 );
+
+	Where to specify profile? Or only R/W profile?
+
+
+/* Create a file. */
+int p15CreateFile( P15_INFO *pi, BYTE filetype, WORD recnum, P15_INDEX *index );
+
+	P15_FILETYPE_ODF,_AODF,_PRKDF,_CDF,_TCDF,_PuKDF,_SKDF,_DODF,_DATA,...
+
+	scCryptoflexCmdSelectFile( pi->ri, pi->ci, 0x5015, buffer, &resplen );
+
+	scCryptoflexCmdGetChall( pi->ri, pi->ci, chall, &resplen=8 );
+
+	/* Authenticate with SO key. */
+	scCryptoflexCmdExtAuth( pi->ri, pi->ci, 0x01, pi->sokey, chall,
+		SC_CRYPTOFLEX_ALGO_DES );
+
+	/* Create EF(filetype). */
+	scCryptoflexCmdCreateFile( pi->ri, pi->ci, fid(filetype),
+		flen=recnum*reclen, SC_CRYPTOFLEX_FILE_FIXED, 0x00,
+		SC_CRYPTOFLEX_UNBLOCKED, reclen=XX, recnum=0, acond(filetype),
+		akeys(filetype) );
+
+	Write index->path,pathlen.
+
+	In case of AODF ignore recnum and write aODF objects to the file.
+
+	For _DATA:
+
+	Locate free FID begining at 0x5101 and create FILE_TRANSPARENT
+	with a size of recnum bytes.  Add entry to EF(UnusedSpace).
+
+	Would data objects of max. 256 bytes be acceptable?
+
+
+/* Finalize file after all data are written. */
+int p15FinalizeFile( P15_INFO *pi, P15_INDEX index );
+
+	Does nothing on the Cryptoflex, but would execute a FreezeAc on the
+	GPK4000 in case of a R/O profile.
+
+
+/* Get file/object permissions. */
+int p15GetPerm( P15_INFO *pi, P15_INDEX index, P15_PERM *perm );
+
+	/* Select file. */
+	scCryptoflexCmdSelectFile( pi->ri, pi->ci, index.path, buffer, &resplen );
+
+	Extract permissions and write them to perm.
+
+	In case of an object in an AODF, PrKDF, etc. file it is the file
+	permission, because every AODF, etc. object has the same permission.
+	In case of an object in a DATA file it is the object permission, because
+	there could be DATA files which have different permissions.
+
+
+/* Read object. */
+int p15GetObject( P15_INFO *pi, BYTE mode, P15_INDEX *index, BYTE *object, int *objlen );
+
+	In case of P15_MODE_INDEX:
+
+	/* Select file. */
+	scCryptoflexCmdSelectFile( pi->ri, pi->ci, index->path, buffer, &resplen );
+
+	/* Read record. */
+	scCryptoflexCmdReadRecord( pi->ri, pi->ci, index->index,
+		SC_CRYPTOFLEX_RECORD_CURR_INDEX, object, objlen );
+
+	DATA files with ReadBinary.
+
+	In case of P15_MODE_FIRST/NEXT/PREV/LAST:
+
+	Only index->path is used for FIRST and LAST. Other parts of index are set.
+	With NEXT and PREV index->index and index->length are set according to
+	returned object.
+
+	PREV and LAST can be expensive with DATA files.
+
+
+/* Add object. */
+int p15AddObject( P15_INFO *pi, P15_INDEX *index, BYTE *object, int objlen );
+
+	/* Select file. */
+	scCryptoflexCmdSelectFile( pi->ri, pi->ci, index->path, buffer, &resplen );
+
+	/* Create record. */
+	scCryptoflexCmdCreateRecord( pi->ri, pi->ci, object, objlen );
+
+	If error: Search through file for free record.
+
+	If error: return with error.
+
+	Update index.
+
+	Other strategy with data files which may result in an update of index
+	and a change of EF(UnusedSpace). If there is no free block search through
+	DATA files in case there is an unreferenced free block. In the case
+	of a DATA file index->pathlen must be 0.
+
+
+/* Overwrite object. */
+int p15UpdateObject( P15_INFO *pi, BYTE *object, int objlen, P15_INDEX *index );
+
+	/* Select file. */
+	scCryptoflexCmdSelectFile( pi->ri, pi->ci, index->path, buffer, &resplen );
+
+	/* Update record. */
+	scCryptoflexCmdUpdateRecord( pi->ri, pi->ci, index->index,
+		SC_CRYPTOFLEX_RECORD_CURR_INDEX, object, objlen );
+
+	Other strategy with data files which may result in an update of index
+	and a change of EF(UnusedSpace).
+
+
+/* Delete object. */
+int p15DeleteObject( P15_INFO *pi, P15_INDEX *index );
+
+	/* Select file. */
+	scCryptoflexCmdSelectFile( pi->ri, pi->ci, index->path, buffer, &resplen );
+
+	/* Mark as unused. */
+	scCryptoflexCmdUpdateRecord( pi->ri, pi->ci, index->index,
+		SC_CRYPTOFLEX_RECORD_CURR_INDEX, "\x00", 1 );
+
+	Other strategy with data files which may result in a change of
+	EF(UnusedSpace). If not enough entries in EF(UnusedSpace) exist
+	overwrite the smallest unused size (in case the to be added entry
+	would not be the smallest). Entries for special files and entries
+	which are the single one pointing to a DATA file have higher
+	priorities. Look for an entry which is directly in front or after
+	the new free block.
+
+	Flag for fast delete or overwrite?
+
+
+/* Build ODF path. */
+int p15GetODFPath( P15_INFO *pi, P15_INDEX *index );
+
+	Normally index->path = 3F0050155031, but it the path should be extracted
+	from EF(DIR).
+
+
+/* Get free space. */
+int p15GetFreeSpace( P15_INFO *pi, WORD free );
+
+	/* Select file. */
+	scCryptoflexCmdSelectFile( pi->ri, pi->ci, 0x5015, buffer, &resplen );
+
+	free==0 means no free space. free==0xFFFF means free space is
+	unknown.
+
+
+/* Change PIN. */
+int p15ChangePIN( P15_INFO *pi, LONG authId, BYTE *oldpin, BYTE oldlen,
+	BYTE *newpin, BYTE newlen );
+
+	If oldlen is 0 the default PIN is used.
+
+
+/* Unblock PIN. */
+int p15UnblockPIN( P15_INFO *pi, LONG authId, BYTE *unblkpin, BYTE unblklen,
+	BYTE *newpin, BYTE newlen );
+
+	authId is the ID of unblock pin or unblocked pin? How does the
+	application get a connection between these two?
+
+
+/* Create Key. */
+int p15GenKey( P15_INFO *pi, LONG authId, BYTE algo, WORD keylen,
+	P15_PUBKEY_INFO *ki );
+
+	authId is the ID of the PIN which has to protect the generated key.
+	If it is not possible to use this PIN for the key the key generation
+	has to be rejected.
+
+	algo is P15_ALGO_RSA,_DSA,... .
+
+	keylen is the length of the key. With RSA it is the modulus size in bit.
+	From where does the application now the possible sizes? Trying it out?
+	From the P15 library which knows what cards can do? GetCapabilities
+	function?
+
+	In ki are the public key parameters returned. P15_PUBKEY_INFO has to
+	be flexible enough to be usable with RSA, DSA, ECC etc..
+
+	On the cryptoflex when the first key is generated/loaded a EF(RSA-PRI)
+	is generated which can contain up to three keys. Is this to much/less?
+
+
+/* Load Secret Key. */
+int p15LoadKey( P15_INFO *pi, LONG authId, BYTE algo, WORD keylen,
+	P15_SECKEY_INFO *ki );
+
+	authId is the ID of the PIN which has to protect the generated key.
+	If it is not possible to use this PIN for the key the key generation
+	has to be rejected.
+
+	algo is P15_ALGO_RSA,_DSA,... .
+
+	keylen is the length of the key. With RSA it is the modulus size in bit.
+
+	In ki are the secret key parameters. P15_SECKEY_INFO has to be fexible
+	enough to be usable with RSA, DSA, ECC etc..
+
+	On the cryptoflex when the first key is generated/loaded a EF(RSA-PRI)
+	is generated which can contain up to three keys.
+
+
+/* Sign with a private key. */
+int p15Sign( P15_INFO *pi, P15_INDEX *index, BYTE *data, int datalen );
+
+	Key identified by index is used to sign data.
+
+	Padding? Cryptoflex signs a 1024bit blobb, but the GPK4000-s can only
+	sign 128bit and 160bit and does different padding. GetCapabilities
+	function?
+
+
+Some more functions?
+
+
+Card initialization
+-------------------
+
+<Some magic to initialize reader and card.>
+
+<Verify SO key.>
+
+<Set PIN.>
+
+p15CardInit( pi, "My first card", "ACME", "\x12\x34\x56", 3 );
+
+/* Create ODF with 3 records. */
+p15CreateFile( pi, P15_FILETYPE_ODF, 3, &index_odf );
+
+/* Create AODF and fill it with data. */
+p15CreateFile( pi, P15_FILETYPE_AODF, 0, &index_aodf );
+
+/* Create ODF with 2 records. */
+p15CreateFile( pi, P15_FILETYPE_PRODF, 2, &index_prkdf );
+
+/* Create ODF with 4 records. */
+p15CreateFile( pi, P15_FILETYPE_CODF, 4, &index_cdf );
+
+<Build 3 records for ODF with index_aodf, index_prkdf, index_cdf.>
+
+p15AddObject( pi, aodf_object, objlen, &index );
+p15AddObject( pi, prkdf_object, objlen, &index );
+p15AddObject( pi, cdf_object, objlen, &index );
+
+/* Finalize ODF. */
+p15FinalizeFile( pi, index_odf );
+
+<Read AODF and set PIN.>
+
+<For each *DF: Write data object. Use resulting index to build *DF object
+and write it.>
+
+
+Public key algorythm paratmeters
+--------------------------------
+
+Crryptoflex:
+	RSA/1024/pub: N,J0,H
+	RSA/1024/sec: P,Q,A=Q^-1 mod P,C=S mod (P-1),F=S mod (Q-1)
+
+GPK4000:
+	RSA/512/pub: N,V(=e),E(=e)
+	RSA/768/pub: N,J0,H,e=10001
+	RSA/1024/pub: N
+	RSA/512/sec: S
+	RSA/512,768,1024/sec: P,Q,Q^-1 mod P,S mod (P-1),S mod (Q-1)
+	DSA/512/pub: P,Q,G,Y
+	DSA/512/sec: X
+
+TCOS:
+	RSA/1024/:
+
+BasicCard:
+	ECC/160/pub: A,B,R,K,G,?
+	ECC/160/sec: A,B,R,K,G,S
+

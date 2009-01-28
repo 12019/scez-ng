@@ -1,0 +1,84 @@
+scgpk4000.lo scgpk4000.o: scgpk4000.c ../../scez/scinternal.h \
+  ../../config.h ../../sio/sio.h ../../sio/platform.h ../../sio/slog.h \
+  ../../sio/varadic.h /usr/lib/gcc/i486-linux-gnu/4.2.3/include/stdarg.h \
+  ../../scez/scgeneral.h ../../scez/screader.h ../../scez/scsmartcard.h \
+  ../../scez/scmacros.h ../../scez/cards/scgpk4000.h /usr/include/stdio.h \
+  /usr/include/features.h /usr/include/sys/cdefs.h \
+  /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h \
+  /usr/include/gnu/stubs-32.h \
+  /usr/lib/gcc/i486-linux-gnu/4.2.3/include/stddef.h \
+  /usr/include/bits/types.h /usr/include/bits/typesizes.h \
+  /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h \
+  /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h \
+  /usr/include/bits/stdio.h /usr/include/string.h \
+  /usr/include/bits/string.h /usr/include/bits/string2.h \
+  /usr/include/endian.h /usr/include/bits/endian.h /usr/include/stdlib.h \
+  /usr/local/include/des.h
+
+../../scez/scinternal.h:
+
+../../config.h:
+
+../../sio/sio.h:
+
+../../sio/platform.h:
+
+../../sio/slog.h:
+
+../../sio/varadic.h:
+
+/usr/lib/gcc/i486-linux-gnu/4.2.3/include/stdarg.h:
+
+../../scez/scgeneral.h:
+
+../../scez/screader.h:
+
+../../scez/scsmartcard.h:
+
+../../scez/scmacros.h:
+
+../../scez/cards/scgpk4000.h:
+
+/usr/include/stdio.h:
+
+/usr/include/features.h:
+
+/usr/include/sys/cdefs.h:
+
+/usr/include/bits/wordsize.h:
+
+/usr/include/gnu/stubs.h:
+
+/usr/include/gnu/stubs-32.h:
+
+/usr/lib/gcc/i486-linux-gnu/4.2.3/include/stddef.h:
+
+/usr/include/bits/types.h:
+
+/usr/include/bits/typesizes.h:
+
+/usr/include/libio.h:
+
+/usr/include/_G_config.h:
+
+/usr/include/wchar.h:
+
+/usr/include/bits/stdio_lim.h:
+
+/usr/include/bits/sys_errlist.h:
+
+/usr/include/bits/stdio.h:
+
+/usr/include/string.h:
+
+/usr/include/bits/string.h:
+
+/usr/include/bits/string2.h:
+
+/usr/include/endian.h:
+
+/usr/include/bits/endian.h:
+
+/usr/include/stdlib.h:
+
+/usr/local/include/des.h:

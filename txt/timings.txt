@@ -1,0 +1,10 @@
+Cyberflex Access
+	1024bit CRT-RSA: sign 750ms, verify 850ms
+
+GPK4000
+	1024bit CRT-RSA: sign 1250ms
+	768bit CRT-RSA: sign 329ms
+	512bit CRT-RSA: sign 160ms
+	512bit DSA: sign 313ms
+
+

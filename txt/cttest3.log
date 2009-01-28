@@ -1,0 +1,89 @@
+CT-API Library Test
+
+Loading CT-API library (libslb_rf60.so): Ok.
+Initialising CT-API library: Ok.
+Test 1: Error.
+   ret=-10 sad=0 dad=0 lenr=0
+Test 2: Error.
+   sad=0 dad=0 lenr=0
+Test 3: Error.
+   sad=0 dad=0 lenr=0
+Test 4: Error.
+   ret=-10 sad=0 dad=0
+Test 5: Error.
+   ret=0
+Test 6: Error.
+   ret=-10 sad=0 dad=0
+Test 7: Error.
+   ret=0
+Test 8: Error.
+   sad=0 dad=0 lenr=11 sw2=00
+Test 9: Error.
+   sad=0 dad=0 sw2=00 rsp=3B169481100601812F9000
+Test 10: Error.
+   ret=0
+Test 11: Error.
+   sad=0 dad=0 sw2=00 rsp=3B169481100601812F9000
+Test 12: Error.
+   ret=0
+Test 13: Error.
+   sad=0 dad=0 lenr=1 rsp=04
+Test 14: Error.
+   ret=0
+Test 15: Error.
+   sad=0 dad=0 lenr=1 rsp=04
+Test 16: Error.
+   ret=0
+Test 23: Skiped
+Test 24: Skiped
+Test 25: Skiped
+Test 26: Skiped
+Test 17: Error.
+   lenr=16 sw1=00 rsp=00000000000000000000000000000000
+Test 18: Ok
+Test 19: Ok
+Test 20: Error.
+   lenr=16 sw1=00 rsp=00000000000000000000000000000000
+Test 21: Error.
+   lenr=16 sw1=00 rsp=00000000000000000000000000000000
+Test 22: Error.
+   lenr=16 sw1=00 rsp=00000000000000000000000000000000
+Test 1b: Error.
+   ret=-10 sad=0 dad=0 lenr=0
+Test 2b Error.
+   sad=0 dad=0 lenr=0
+Test 3b: Error.
+   sad=0 dad=0 lenr=0
+Test 5b: Error.
+   sad=0 dad=0 lenr=0
+Test 7b: Error.
+   ret=-10 sad=0 dad=0 lenr=0
+Test 8b: Error.
+   ret=-10 sad=0 dad=0 lenr=0
+Test 10b: Error.
+   ret=-10 sad=0 dad=0 lenr=0
+Test 12b: Error.
+   sad=0 dad=0 lenr=1 rsp=00
+Test 13b: Error.
+   ret=0
+Test 14b: Error.
+   sad=0 dad=0 lenr=1 rsp=00
+Test 15b: Error.
+   ret=0
+Test 16b: Error.
+   lenr=16 sw1=00 rsp=00000000000000000000000000000000
+Test 17b: Ok
+Test 18b: Ok
+Test 22b: Error.
+   ret=-10 sad=0 dad=0 lenr=0
+Test 1c: Error.
+   sad=0 dad=0 lenr=0
+Test 2c: Error.
+   sad=0 dad=0 sw1=90 rsp=9000
+Test 3c: Error.
+   lenr=16 sw1=00 rsp=00000000000000000000000000000000
+Test 1d: Ok
+Warning: Implemented CT-BCS version could not be determined.
+Closing CT-API library: Ok.
+
+9 (including skiped) out of 45 tests passed.

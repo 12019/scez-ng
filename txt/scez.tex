@@ -1,0 +1,1072 @@
+\documentclass[a4paper,oneside]{article}
+
+\title{SCEZ Library Documentation - Old version}
+\author{Matthias Bruestle}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Include Files}
+
+%----------------------------------------------------------------------
+
+\subsection{sc\_general.h}
+
+\begin{verbatim}
+#if defined( WITH_CRYPTLIB )
+#include "../crypt.h"
+#else
+#define BYTE	unsigned char
+#define	CHAR	signed char
+#define	WORD	unsigned short
+#define	LONG	unsigned int
+#define BOOLEAN	int
+#define FALSE	0
+#define TRUE	!0
+#ifndef max
+  #define max( a, b )   ( ( ( a ) > ( b ) ) ? ( ( int ) a ) : ( ( int ) b ) )
+#endif /* !max */
+#ifndef min
+  #define min( a, b )   ( ( ( a ) < ( b ) ) ? ( ( int ) a ) : ( ( int ) b ) )
+#endif /* !min */
+#endif /* WITH_CRYPTLIB */
+
+#include <stdio.h>
+#include "sio.h"
+
+/** Defines **/
+
+#define	SC_GENERAL_SHORT_DATA_SIZE	256
+#define	SC_GENERAL_EXTENDED_DATA_SIZE	65536
+#define	SC_GENERAL_MAX_DATA_SIZE	65536
+
+/* Reader (main types) */
+
+#define SC_READER_UNKNOWN		0
+#define SC_READER_DUMBMOUSE		1
+#define SC_READER_TOWITOKO		2
+#define	SC_READER_CTAPI			3
+#define	SC_READER_VENDOR1		100
+#define	SC_READER_VENDOR2		101
+#define	SC_READER_VENDOR3		102
+
+/* Cards */
+
+#define SC_CARD_UNKNOWN				0x00
+#define SC_CARD_MULTIFLEX_3K		0x01 /* 3kB EEPROM */
+#define SC_CARD_MULTIFLEX_8K		0x02 /* 8kB EEPROM, more features */
+#define SC_CARD_CRYPTOFLEX			0x08
+#define SC_CARD_CRYPTOFLEX_DES		0x09 /* full DES option */
+#define SC_CARD_CRYPTOFLEX_KEYGEN	0x0A /* full DES / RSA Key generation */
+#define SC_CARD_CYBERFLEX			0x10
+#define	SC_CARD_PAYFLEX				0x18
+#define SC_CARD_GPK4000_S			0x20
+#define SC_CARD_GPK4000_SP			0x21 /* "privacy" */
+#define	SC_CARD_GPK2000_S			0x28
+#define	SC_CARD_GPK2000_SP			0x29 /* "privacy" */
+#define	SC_CARD_MPCOS_EMV_1B		0x30 /* 1 Byte data units */
+#define	SC_CARD_MPCOS_EMV_4B		0x31 /* 4 Byte data units */
+#define	SC_CARD_VENDOR1				0xF0
+#define	SC_CARD_VENDOR2				0xF1
+#define	SC_CARD_VENDOR3				0xF2
+
+/* Direction */
+
+#define SC_DIR_IN	0
+#define SC_DIR_OUT	1
+
+/* Card status */
+
+#define	SC_CARD_STATUS_UNKNOWN	0x00
+#define	SC_CARD_STATUS_PRESENT	0x01	/* Card present */
+#define	SC_CARD_STATUS_CHANGED	0x02	/* Card changed */
+
+/* T=1 checksum */
+
+#define	SC_T1_CHECKSUM_LRC	0x00
+#define	SC_T1_CHECKSUM_CRC	0x01
+
+/* Protocols */
+
+#define	SC_PROTOCOL_UNKNOWN	0xFF
+#define SC_PROTOCOL_T0		0x00
+#define SC_PROTOCOL_T1		0x01
+#define SC_PROTOCOL_T14		0x0E
+#define SC_PROTOCOL_I2C		0x10
+#define SC_PROTOCOL_2WIRE	0x20
+#define SC_PROTOCOL_3WIRE	0x40
+
+/* Exit codes */
+
+#define	SC_EXIT_OK					0
+#define	SC_EXIT_UNKNOWN_ERROR		1	/* Error code for everything */
+#define	SC_EXIT_IO_ERROR			2
+#define	SC_EXIT_NOT_SUPPORTED		3
+#define	SC_EXIT_NO_ACK				4
+#define	SC_EXIT_BAD_ATR				5
+#define	SC_EXIT_PROBE_ERROR			6
+#define	SC_EXIT_BAD_CHECKSUM		7
+#define	SC_EXIT_TIMEOUT				8
+#define	SC_EXIT_CARD_CHANGED		9
+#define	SC_EXIT_NO_CARD				10
+#define	SC_EXIT_NOT_IMPLEMENTED		11
+#define	SC_EXIT_CMD_TOO_SHORT		12
+#define	SC_EXIT_MALLOC_ERROR		13
+#define	SC_EXIT_BAD_SW				14
+#define	SC_EXIT_BAD_PARAM			15
+#define	SC_EXIT_NO_SLOT				16
+#define	SC_EXIT_LIB_ERROR			17
+
+/* APDU Classes */
+
+/*
+ * Class 1: lc=0, le=0
+ * Class 2 Short: lc=0, le<=256
+ * Class 3 Short: lc<=255, le=0
+ * Class 4 Short: lc<=255, le<=256
+ * Class 2 Extended: lc=0, le<=65536
+ * Class 3 Extended: lc<=65535, le=0
+ * Class 4 Extended: lc<=65535, le<=65536
+ *
+ * T=0: Class 4 becomes Class 3
+ */
+
+#define	SC_APDU_CLASS_NONE			0
+#define	SC_APDU_CLASS_1				1
+#define	SC_APDU_CLASS_2_SHORT		2
+#define	SC_APDU_CLASS_3_SHORT		3
+#define	SC_APDU_CLASS_4_SHORT		4
+#define	SC_APDU_CLASS_2_EXT			5
+#define	SC_APDU_CLASS_3_EXT			6
+#define	SC_APDU_CLASS_4_EXT			7
+
+/* Status words */
+
+#define	SC_SW_OK					0
+#define	SC_SW_DATA_AVAIL			1
+#define	SC_SW_UNKNOWN				2
+#define	SC_SW_BAD_CLA				3
+#define	SC_SW_BAD_INS				4
+#define	SC_SW_BAD_AUTH				5
+#define	SC_SW_BAD_LENGTH			6
+#define	SC_SW_BAD_P1P2				7
+#define	SC_SW_FILE_ERROR			8
+#define	SC_SW_INVALID_FILE			9
+#define	SC_SW_END_OF_FILE			10
+#define	SC_SW_FORMAT_ERROR			11
+#define	SC_SW_MEMORY_ERROR			12
+#define	SC_SW_NOT_FOUND				13
+#define	SC_SW_EXPECTED_LEN			14
+#define	SC_SW_INVALID_ACCESS		15
+#define	SC_SW_BLOCKED				16
+#define	SC_SW_NO_CHALLENGE			17
+#define SC_SW_AUTH_LEFT				18	/* Bad authentication. Tries left. */
+#define SC_SW_WRONG_CONTEXT			19
+#define	SC_SW_INVALID_FUCTION		20
+#define SC_SW_PURSE_ERROR			21
+#define	SC_SW_WRONG_CONDITION		22
+
+/* Command Capabilities */
+
+#define	SC_COMMAND_APPENDREC	0x0001
+#define	SC_COMMAND_ERASEBIN		0x0002
+#define	SC_COMMAND_GETCHALL		0x0004
+#define	SC_COMMAND_GETRESP		0x0008
+#define	SC_COMMAND_READBIN		0x0010
+#define	SC_COMMAND_READREC		0x0020
+#define	SC_COMMAND_SELECTFILE	0x0040
+#define	SC_COMMAND_UPDATEBIN	0x0080
+#define	SC_COMMAND_UPDATEREC	0x0100
+#define	SC_COMMAND_VERIFY		0x0200
+
+/** Structs **/
+
+/* Reader info */
+
+typedef struct sc_reader_info {
+	int			major;	/* main reader type */
+	int			minor;	/* minor reader type */
+	int			slot;	/* slot number (ICC1:1, ICC2:2, ...) */
+	int			etu;	/* etu in us */
+	SIO_INFO	*si;	/* serial port handle (Towitoko) */
+	WORD		ctn;	/* cardterminal number (CT-API) */
+} SC_READER_INFO;
+
+/* T=1 info */
+
+typedef struct sc_t1_info {
+	BYTE	nad;		/* NAD */
+	int		ns;			/* N(S) */
+	int		nr;			/* N(R) */
+	int		ifsc;		/* Information Filed Size Card */
+	int		ifsd;		/* Information Filed Size Device */
+	int		cwt;		/* Character Waiting Time in etu -11 etu */
+	int		bwt;		/* Block Waiting Time in us */
+	int		rc;			/* Redundancy Check (LRC/CRC) */
+} SC_T1_INFO;
+
+/* Card Info */
+
+typedef struct sc_card_info {
+	int		type;		/* Card type */
+	int		status;		/* Card Status */
+	BYTE	atr[32];	/* ATR */
+	int		atrlen;		/* Length of ATR */
+	int		protocol;	/* Used protocol */
+	BOOLEAN	direct;		/* Direct convention */
+	int		wwt;		/* Work Waiting Time in etu */
+	SC_T1_INFO	t1;		/* for T=1 */
+	int		getrsp[5];	/* GET RESPONSE Header */
+	int		memsize;	/* EEPROM size (I2C,2W,3W) */
+} SC_CARD_INFO;
+
+/* APDU */
+
+typedef struct sc_apdu {
+	int		class;		/* APDU class */
+	BYTE	*cmd;		/* C-APDU */
+	int		cmdlen;		/* length of C-APDU */
+	BYTE	*rsp;		/* R-APDU */
+	int		rsplen;		/* length of R-APDU */
+} SC_APDU;
+
+/* Data block */
+
+typedef struct sc_data {
+	int		len;		/* data length */
+	int		offset;		/* data offset, e.g. from begining of card */
+	BYTE	*data;		/* data */
+} SC_DATA;
+
+/* Reverse String */
+void SC_General_ReverseString( BYTE *data, int len);
+
+/* Create reader */
+SC_READER_INFO *SC_General_NewReader( int type, int slot );
+
+/* Remove reader */
+void SC_General_FreeReader( SC_READER_INFO **cr );
+
+/* Create card */
+SC_CARD_INFO *SC_General_NewCard( );
+
+/* Remove card */
+void SC_General_FreeCard( SC_CARD_INFO **ci );
+
+/* Create APDU */
+SC_APDU *SC_General_NewAPDU( );
+
+/* Remove APDU */
+void SC_General_FreeAPDU( SC_APDU **apdu );
+\end{verbatim}
+
+%----------------------------------------------------------------------
+
+\subsection{sc\_reader.h}
+
+\begin{verbatim}
+#include "sc_general.h"
+
+/* Initialize reader */
+int SC_Reader_Init( SC_READER_INFO *cr, char *param );
+
+/* Shutdown reader */
+int SC_Reader_Shutdown( SC_READER_INFO *cr );
+
+/* Activate card */
+int SC_Reader_Activate( SC_READER_INFO *cr);
+
+/* Deactivate card */
+int SC_Reader_Deactivate( SC_READER_INFO *cr);
+
+/* Get card status */
+int SC_Reader_CardStatus( SC_READER_INFO *cr, SC_CARD_INFO *ci);
+
+/* Reset card and read ATR */
+int SC_Reader_ResetCard( SC_READER_INFO *cr, SC_CARD_INFO *ci );
+
+/* Send and process T=0 command */
+int SC_Reader_T0( SC_READER_INFO *cr, SC_CARD_INFO *ci, SC_APDU *apdu );
+
+/* Transmit APDU with protocol T=1 */
+int SC_Reader_T1( SC_READER_INFO *cr, SC_CARD_INFO *ci, SC_APDU *apdu );
+
+/* Transmit APDU */
+int SC_Reader_SendApdu( SC_READER_INFO *cr, SC_CARD_INFO *ci, SC_APDU *apdu );
+\end{verbatim}
+
+%----------------------------------------------------------------------
+
+\subsection{sc\_smartcard.h}
+
+\begin{verbatim}
+#include "sc_general.h"
+
+/* Determine the card type based on the ATR and fill data in ci */
+int SC_Smartcard_GetCardType( SC_CARD_INFO *ci );
+
+/* Process ATR and write results into ci */
+int SC_Smartcard_ProcessATR( SC_CARD_INFO *ci );
+
+/* Process status word */
+int SC_Smartcard_ProcessSW( SC_CARD_INFO *ci, SC_APDU *apdu, int *status,
+	int *number );
+
+/* Fill card data in ci */
+int SC_Smartcard_GetCarddata( SC_CARD_INFO *ci );
+
+/* Common Commands */
+
+int SC_Smartcard_Cmd_AppendRec( SC_READER_INFO *cr,
+	SC_CARD_INFO *ci, BYTE *sw, BYTE *rec, int reclen );
+int SC_Smartcard_Cmd_EraseBin( SC_READER_INFO *cr,
+	SC_CARD_INFO *ci, BYTE *sw, int offset, int datalen );
+int SC_Smartcard_Cmd_GetChall( SC_READER_INFO *cr,
+	SC_CARD_INFO *ci, BYTE *sw, BYTE *challenge, int *len );
+int SC_Smartcard_Cmd_GetResp( SC_READER_INFO *cr,
+	SC_CARD_INFO *ci, BYTE *sw, BYTE *resp, int *resplen );
+int SC_Smartcard_Cmd_ReadBin( SC_READER_INFO *cr,
+	SC_CARD_INFO *ci, BYTE *sw, int offset, BYTE *data, int *datalen );
+int SC_Smartcard_Cmd_ReadRec( SC_READER_INFO *cr,
+	SC_CARD_INFO *ci, BYTE *sw, BYTE recnum, BYTE *rec, int *reclen );
+int SC_Smartcard_Cmd_SelectFile( SC_READER_INFO *cr,
+	SC_CARD_INFO *ci, BYTE *sw, int fid );
+int SC_Smartcard_Cmd_UpdateBin( SC_READER_INFO *cr,
+	SC_CARD_INFO *ci, BYTE *sw, int offset, BYTE *data, BYTE datalen );
+int SC_Smartcard_Cmd_UpdateRec( SC_READER_INFO *cr,
+	SC_CARD_INFO *ci, BYTE *sw, BYTE recnum, BYTE *rec, BYTE reclen );
+int SC_Smartcard_Cmd_Verify( SC_READER_INFO *cr,
+	SC_CARD_INFO *ci, BYTE *sw, BYTE *pin, int pinlen );
+\end{verbatim}
+
+%----------------------------------------------------------------------
+
+\section{Device Independent Functions}
+
+\subsection{SC\_General\_ReverseString}
+
+\subsubsection*{Description}
+
+This function reverses the bits in each byte of a byte array.
+(Used for inverse convention.)
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+void SC_General_ReverseString( BYTE *data, int len)
+\end{verbatim}
+
+\begin{description}
+\item[BYTE *data:] Byte array
+\item[int len:] Length of byte array
+\end{description}
+
+\subsubsection*{Called Functions}
+
+None.
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_General\_NewReader}
+
+\subsubsection*{Description}
+
+Creates pointer to SC\_READER\_INFO and initializes it.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+SC_READER_INFO *SC_General_NewReader( int type, int slot )
+\end{verbatim}
+
+\begin{description}
+\item[int type:] Major card reader type (see sc\_general.h)
+\item[int slot:] Card slot in reader. (Counted from 1.)
+\end{description}
+
+\begin{table}[h!]
+\caption{Card slots}
+\begin{center}
+\begin{tabular}{|l|c|} \hline
+Reader & Slots \\ \hline \hline
+CT-API & varying \\ \hline
+Dumbmouse & 1 \\ \hline
+Towitoko & 1 \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\subsubsection*{Called Functions}
+
+None.
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_General\_FreeReader}
+
+\subsubsection*{Description}
+
+Frees SC\_READER\_INFO pointer.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+void SC_General_FreeReader( SC_READER_INFO **cr )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_READER\_INFO **cr:] Pointer to SC\_READER\_INFO pointer
+\end{description}
+
+\subsubsection*{Called Functions}
+
+None.
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_General\_NewCard}
+
+\subsubsection*{Description}
+
+Creates pointer to SC\_CARD\_INFO and initializes it.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+SC_CARD_INFO *SC_General_NewCard( )
+\end{verbatim}
+
+\subsubsection*{Called Functions}
+
+None.
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_General\_FreeCard}
+
+\subsubsection*{Description}
+
+Frees SC\_CARD\_INFO pointer.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+void SC_General_FreeCard( SC_CARD_INFO **ci )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_CARD\_INFO **ci:] Pointer to SC\_CARD\_INFO pointer
+\end{description}
+
+\subsubsection*{Called Functions}
+
+None.
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_General\_NewAPDU}
+
+\subsubsection*{Description}
+
+Creates pointer to SC\_CARD\_INFO and initializes it.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+SC_APDU *SC_General_NewAPDU( )
+\end{verbatim}
+
+\subsubsection*{Called Functions}
+
+None.
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_General\_FreeAPDU}
+
+\subsubsection*{Description}
+
+Frees SC\_APDU pointer.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+void SC_General_FreeAPDU( SC_APDU **apdu )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_APDU **apdu:] Pointer to SC\_APDU pointer
+\end{description}
+
+\subsubsection*{Called Functions}
+
+None.
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Reader\_Init (Same as reader specific function)}
+
+\subsubsection*{Description}
+
+Initializes reader.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Reader_Init( SC_READER_INFO *cr, char *param )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_READER\_INFO *cr:] Pointer to SC\_READER\_INFO struct
+\item[char *param:] Parameter string
+\end{description}
+
+\begin{table}[h!]
+\caption{Init parameters}
+\begin{center}
+\begin{tabular}{|l|c|} \hline
+Reader & Parameter \\ \hline \hline
+CT-API & Port number \\ \hline
+Dumbmouse & Serial port, e.g. /dev/ttyS1 or COM2 \\ \hline
+Towitoko & Serial port, e.g. /dev/ttyS1 or COM2 \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Ctapi\_Init
+\item SC\_Dumbmouse\_Init
+\item SC\_Towitoko\_Init
+\end{itemize}
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Reader\_Shutdown (Same as reader specific function)}
+
+\subsubsection*{Description}
+
+Shuts reader down.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Reader_Shutdown( SIO_INFO *si , SC_READER_INFO *cr )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_READER\_INFO *cr:] Pointer to SC\_READER\_INFO struct
+\end{description}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Ctapi\_Shutdown
+\item SC\_Dumbmouse\_Shutdown
+\item SC\_Towitoko\_Shutdown
+\end{itemize}
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Reader\_Activate (Same as reader specific function)}
+
+\subsubsection*{Description}
+
+Activate card and supply voltage.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Reader_Activate( SC_READER_INFO *cr)
+\end{verbatim}
+
+\begin{description}
+\item[SC\_READER\_INFO *cr:] Pointer to SC\_READER\_INFO struct
+\end{description}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Ctapi\_Activate
+\item SC\_Dumbmouse\_Activate
+\item SC\_Towitoko\_Activate
+\end{itemize}
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Reader\_Deactivate (Same as reader specific function)}
+
+\subsubsection*{Description}
+
+Deactive card and cut off voltage. Eject card if possible.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Reader_Deactivate( SC_READER_INFO *cr)
+\end{verbatim}
+
+\begin{description}
+\item[SC\_READER\_INFO *cr:] Pointer to SC\_READER\_INFO struct
+\end{description}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Ctapi\_Deactivate
+\item SC\_Dumbmouse\_Deactivate
+\item SC\_Towitoko\_Deactivate
+\end{itemize}
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Reader\_CardStatus (Same as reader specific function)}
+
+\subsubsection*{Description}
+
+Sets ci->status according to card status. (See sc\_general.h)
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Reader_CardStatus( SC_READER_INFO *cr, SC_CARD_INFO *ci )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_READER\_INFO *cr:] Pointer to SC\_READER\_INFO struct
+\item[SC\_CARD\_INFO *ci:] Pointer to SC\_CARD\_INFO struct
+\end{description}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Ctapi\_CardStatus
+\item SC\_Dumbmouse\_CardStatus
+\item SC\_Towitoko\_CardStatus
+\end{itemize}
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Reader\_ResetCard (Same as reader specific function)}
+
+\subsubsection*{Description}
+
+Resets Smartcard and reads ATR (ci->atr, ci->atrlen).
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Reader_ResetCard( SC_READER_INFO *cr, SC_CARD_INFO *ci )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_READER\_INFO *cr:] Pointer to SC\_READER\_INFO struct
+\item[SC\_CARD\_INFO *ci:] Pointer to SC\_CARD\_INFO struct
+\end{description}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Ctapi\_ResetCard
+\item SC\_Dumbmouse\_ResetCard
+\item SC\_Towitoko\_ResetCard
+\end{itemize}
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Reader\_T0 (Same as reader specific function)}
+
+\subsubsection*{Description}
+
+Sends T=0 tpdus and writes response in apdu->rsp/apdu->rsplen.
+
+Answer for Class 4 APDUs must me read with an extra Get Response.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Reader_T0( SC_READER_INFO *cr, SC_CARD_INFO *ci, SC_APDU *apdu )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_READER\_INFO *cr:] Pointer to SC\_READER\_INFO struct
+\item[SC\_CARD\_INFO *ci:] Pointer to SC\_CARD\_INFO struct
+\item[SC\_APDU *apdu:] Pointer to SC\_APDU struct
+\end{description}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Ctapi\_T0
+\item SC\_Dumbmouse\_T0
+\item SC\_Towitoko\_T0
+\end{itemize}
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Reader\_T1 (Same as reader specific function)}
+
+\subsubsection*{Description}
+
+Sends T=1 commands and writes response in apdu->rsp/apdu->rsplen.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Reader_T1( SC_READER_INFO *cr, SC_CARD_INFO *ci, SC_APDU *apdu )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_READER\_INFO *cr:] Pointer to SC\_READER\_INFO struct
+\item[SC\_CARD\_INFO *ci:] Pointer to SC\_CARD\_INFO struct
+\item[SC\_APDU *apdu:] Pointer to SC\_APDU struct
+\end{description}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Ctapi\_T1
+\item SC\_Dumbmouse\_T1
+\item SC\_Towitoko\_T1
+\end{itemize}
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Reader\_SendApdu (Same as reader specific function)}
+
+\subsubsection*{Description}
+
+Sends APDU to card and reads response. Correct protocol (T=0 or T=1)
+is automagically selected. Get Response is done for T=0.
+
+For doing correctly T=0 it is required to fill apdu->getrsp,
+e.g. by calling SC\_Smartcard\_GetCardType.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Reader_SendApdu( SC_READER_INFO *cr, SC_CARD_INFO *ci,
+ SC_APDU *apdu )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_READER\_INFO *cr:] Pointer to SC\_READER\_INFO struct
+\item[SC\_CARD\_INFO *ci:] Pointer to SC\_CARD\_INFO struct
+\item[SC\_APDU *apdu:] Pointer to SC\_APDU struct
+\end{description}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Ctapi\_SendApdu
+\item SC\_Dumbmouse\_SendApdu
+\item SC\_Towitoko\_SendApdu
+\end{itemize}
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Smartcard\_GetCardType}
+
+\subsubsection*{Description}
+
+Detects card according to ci->atr and calls SC\_Smartcard\_GetCarddata
+to fill in other fields in ci, e.g. ci->getrsp. Prepares ci for
+SC\_Reader\_SendApdu.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Smartcard_GetCardType( SC_CARD_INFO *ci )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_CARD\_INFO *ci:] Pointer to SC\_CARD\_INFO struct
+\end{description}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Smartcard\_GetCarddata
+\end{itemize}
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Smartcard\_ProcessATR}
+
+\subsubsection*{Description}
+
+Analyses ATR and writes data from it to ci.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Smartcard_ProcessATR( SC_CARD_INFO *ci )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_CARD\_INFO *ci:] Pointer to SC\_CARD\_INFO struct
+\end{description}
+
+\subsubsection*{Called Functions}
+
+None.
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Smartcard\_ProcessSW (Same as reader specific function)}
+
+\subsubsection*{Description}
+
+Processes last two bytes in ci->rsp and writes status (see SC\_SW\_*
+in sc\_general.h) to status. If status is SC\_SW\_DATA\_AVAIL number
+contains the number of bytes of data to fetch with a Get Response.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Smartcard_ProcessSW( SC_CARD_INFO *ci, SC_APDU *apdu,
+ int *status, int *number )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_CARD\_INFO *ci:] Pointer to SC\_CARD\_INFO struct
+\item[SC\_APDU *apdu:] Pointer to SC\_APDU struct
+\item[int *status:] Status of command (see SC\_SW\_* in sc\_general.h)
+\item[int *number:] Contains number of bytes to fetch
+\end{description}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Cryptoflex\_ProcessSW
+\item SC\_Gpk4000\_ProcessSW
+\item SC\_Multiflex\_ProcessSW
+\end{itemize}
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Smartcard\_GetCapability (Same as reader specific function)}
+
+\subsubsection*{Description}
+
+Returns status word with bit flags which show the standard commands
+(SC\_Smartcard\_Cmd\_*) the card supports.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Multiflex_GetCapability( SC_CARD_INFO *ci );
+\end{verbatim}
+
+\begin{description}
+\item[SC\_CARD\_INFO *ci:] Pointer to SC\_CARD\_INFO struct
+\end{description}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Cryptoflex\_GetCapability
+\item SC\_Gpk4000\_GetCapability
+\item SC\_Multiflex\_GetCapability
+\end{itemize}
+
+%----------------------------------------------------------------------
+
+\subsection{SC\_Smartcard\_GetCarddata (Same as reader specific function)}
+
+\subsubsection*{Description}
+
+Sets data in ci according to ci->type.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Smartcard_GetCarddata( SC_CARD_INFO *ci )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_CARD\_INFO *ci:] Pointer to SC\_CARD\_INFO struct
+\end{description}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Cryptoflex\_GetCarddata
+\item SC\_Gpk4000\_GetCarddata
+\item SC\_Multiflex\_GetCarddata
+\end{itemize}
+
+%----------------------------------------------------------------------
+
+\section{Device Dependent Functions (Selection)}
+
+Best documentation for device dependent functions are probably the
+technical manuals (Manuals from the manufacturer, multiflex.tex in
+this directory or SCDK). Here are a few examples of smart card specific
+commands to show the general structure.
+
+\subsection{SC\_Cryptoflex\_Cmd\_CreateFile}
+
+\subsubsection*{Description}
+
+Creates a directory or elementary file in the selected directory
+file.
+
+\subsubsection*{Parameters}
+
+\begin{verbatim}
+int SC_Cryptoflex_Cmd_CreateFile( SC_READER_INFO *cr, SC_CARD_INFO *ci,
+ BYTE *sw, BYTE *fid, int flen, BYTE ftype, BYTE init, BYTE status,
+ BYTE reclen, BYTE recnum, BYTE *acond, BYTE *akeys )
+\end{verbatim}
+
+\begin{description}
+\item[SC\_READER\_INFO *cr:] Pointer to SC\_READER\_INFO struct
+\item[SC\_CARD\_INFO *ci:] Pointer to SC\_CARD\_INFO struct
+\item[BYTE *sw:] Pointer to status word (BYTE sw[2])
+\item[BYTE *fid:] Pointer to file identifier (BYTE fid[2])
+\item[int flen:] Length of file to create
+\item[BYTE init:] 0x00: do not initialize file, 0xFF: do initialize file
+\item[BYTE status:] 0x00: blocked, 0x01: unblocked
+\item[BYTE reclen:] Length of records for cyclic and fixed-length record files
+\item[BYTE recnum:] Number of records for cyclic and fixed-length record files
+\item[BYTE *acond:] Pointer to array of access conditions (Directory, Create,
+   Delete, Read, Update, Seek, Increase, Decrease) (BYTE acond[4])
+\item[BYTE *akeys:] Pointer to array of access keys (BYTE akeys[3])
+\end{description}
+
+\subsubsection*{Called Functions}
+
+\begin{itemize}
+\item SC\_Reader\_T0
+\end{itemize}
+
+%----------------------------------------------------------------------
+%
+%\subsection{}
+%
+%\subsubsection*{Description}
+%
+%\subsubsection*{Parameters}
+%
+%\begin{verbatim}
+%\end{verbatim}
+%
+%\begin{description}
+%\item[SC\_READER\_INFO *cr:] Pointer to SC\_READER\_INFO struct
+%\item[SC\_CARD\_INFO *ci:] Pointer to SC\_CARD\_INFO struct
+%\item[SC\_APDU *apdu:] Pointer to SC\_APDU struct
+%\item[:]
+%\item[:]
+%\item[:]
+%\end{description}
+%
+%\subsubsection*{Called Functions}
+%
+%\begin{itemize}
+%\item
+%\item
+%\item
+%\end{itemize}
+
+\section{Example}
+
+This examples misses mostly error detecting.
+
+\subsection{Example 1: Usage of device independent functions}
+
+\begin{verbatim}
+SC_READER_INFO *cr;
+SC_CARD_INFO *ci;
+SC_APDU *apdu;
+
+BYTE selfile[]={ 0xC0, 0xA4, 0x00, 0x00, 0x02, 0x3F, 0x00, 0x00 };
+
+cr = SC_General_NewReader( SC_READER_TOWITOKO, 1 );
+ci = SC_General_NewCard( );
+apdu = SC_General_NewAPDU( );
+
+SC_Reader_Init( cr, '/dev/ttyS1' );
+
+/* Test if card present */
+SC_Reader_CardStatus( cr, ci );
+if( !(ci->status & SC_CARD_STATUS_PRESENT ) exit(1);
+
+SC_Reader_Activate( cr );
+SC_Reader_ResetCard( cr, ci );
+
+/* Prepare ci for SendApdu */
+SC_Smartcard_GetCardType( ci );
+
+/* Setup APDU */
+apdu->class=SC_APDU_CLASS_4_SHORT;
+apdu->cmd=cmd
+apdu->cmdlen=7;
+apdu->rsp=malloc(SC_GENERAL_SHORT_DATA_SIZE+2);
+
+SC_Reader_SendApdu( cr, ci, apdu );
+
+SC_Reader_Deactivate( cr );
+SC_Reader_Shutdown( cr );
+
+SC_General_FreeReader( &cr );
+SC_General_FreeCard( &ci );
+SC_General_FreeAPDU( &apdu );
+\end{verbatim}
+
+\subsection{Example 1: Usage of device dependent functions}
+
+\begin{verbatim}
+SC_READER_INFO *cr;
+SC_CARD_INFO *ci;
+
+BYTE sw[2];
+BYTE fid[2];
+BYTE acond[4];
+BYTE akeys[3];
+BYTE authkey[]={0x47,0x46,0x58,0x49,0x32,0x56,0x78,0x40};
+BYTE mac[8];
+
+BYTE buffer[SC_GENERAL_SHORT_DATA_SIZE+2];
+int resplen;
+int i;
+
+...
+
+/* Select MF */
+fid[0]=0x3F; fid[1]=0x00;
+SC_Multiflex_Cmd_SelectFile( cr, ci, sw, fid );
+
+/* Get MF Data */
+SC_Multiflex_Cmd_GetResp( cr, ci, sw, buffer, &resplen );
+
+printf("Response:");
+for( i=0; i<resplen; i++ ) printf(" %.2X",buffer[i]);
+printf("\n");
+
+/* Get Challenge */
+SC_Multiflex_Cmd_GetChall( cr, ci, sw, buffer );
+
+/* Encrypt Challenge */
+SC_Multiflex_GenerateAuth( authkey, buffer, mac );
+
+/* External Authenticate */
+SC_Multiflex_Cmd_ExtAuth( cr, ci, sw, 0x01, mac );
+
+/* Create transparent file 0000 */
+fid[0]=0x00; fid[1]=0x00;
+acond[0]=0x3F; acond[1]=0x33; acond[2]=0xFF; acond[3]=0x33;
+akeys[0]=0x11; akeys[1]=0xFF; akeys[2]=0x11;
+SC_Multiflex_Cmd_CreateFile( cr, ci, sw, fid, 0x17,
+ SC_MULTIFLEX_FILE_TRANSPARENT, 0, 1, 0, 0, acond, akeys );
+
+...
+\end{verbatim}
+
+\end{document}
+
+

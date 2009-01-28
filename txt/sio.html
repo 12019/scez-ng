@@ -1,0 +1,243 @@
+<!doctype html public "-//W30//DTD W3 HTML 2.0//EN">
+
+<HTML>
+
+<!-- This file was generated using SDF 2.000beta12 by
+     Ian Clatworthy (ianc@mincom.com). SDF is freely
+     available from http://www.mincom.com/mtr/sdf. -->
+
+<HEAD>
+<TITLE>DEVELOPMENT: SIO - Serial I/O Library</TITLE>
+</HEAD>
+<BODY BGCOLOR="ffffff">
+
+<H1>SIO - Serial I/O Library</H1>
+<ADDRESS>SIO.001 (Initial)</ADDRESS>
+<ADDRESS>T J Hudson	tjh@cryptsoft.com</ADDRESS>
+<ADDRESS>19 October 1997</ADDRESS>
+<BR CLEAR="All">
+<!-- TOC -->
+<HR>
+<H2>Table of Contents</H2>
+<UL>
+<A HREF="#Introduction">1. Introduction</A><UL>
+<A HREF="#Copyright">1.1. Copyright</A>
+<BR>
+<A HREF="#References">1.2. References</A></UL>
+<BR>
+<A HREF="#API">2. API</A><UL>
+<A HREF="#SIO_INFO">2.1. SIO_INFO</A>
+<BR>
+<A HREF="#SIO_GetVersion">2.2. SIO_GetVersion</A>
+<BR>
+<A HREF="#SIO_Open">2.3. SIO_Open</A>
+<BR>
+<A HREF="#SIO_Close">2.4. SIO_Close</A>
+<BR>
+<A HREF="#SIO_SetLogFile">2.5. SIO_SetLogFile</A>
+<BR>
+<A HREF="#SIO_DumpBuffer">2.6. SIO_DumpBuffer</A>
+<BR>
+<A HREF="#SIO_ReadSettings">2.7. SIO_ReadSettings</A>
+<BR>
+<A HREF="#SIO_WriteSettings">2.8. SIO_WriteSettings</A>
+<BR>
+<A HREF="#SIO_GetSettingsString">2.9. SIO_GetSettingsString</A>
+<BR>
+<A HREF="#SIO_SetSettingsString">2.10. SIO_SetSettingsString</A>
+<BR>
+<A HREF="#SIO_WaitForData">2.11. SIO_WaitForData</A>
+<BR>
+<A HREF="#SIO_ReadChar">2.12. SIO_ReadChar</A>
+<BR>
+<A HREF="#SIO_ReadBuffer">2.13. SIO_ReadBuffer</A>
+<BR>
+<A HREF="#SIO_WriteChar">2.14. SIO_WriteChar</A>
+<BR>
+<A HREF="#SIO_WriteBuffer">2.15. SIO_WriteBuffer</A></UL>
+<BR>
+<A HREF="#Smartcard Functions">3. Smartcard Functions</A><UL>
+<A HREF="#SCT0_Reset">3.1. SCT0_Reset</A>
+<BR>
+<A HREF="#SCT0_GetATR">3.2. SCT0_GetATR</A>
+<BR>
+<A HREF="#SCT0_ScanForATR">3.3. SCT0_ScanForATR</A>
+<BR>
+<A HREF="#SCT0_ScanClasses">3.4. SCT0_ScanClasses</A>
+<BR>
+<A HREF="#SCT0_ScanInstructions">3.5. SCT0_ScanInstructions</A>
+<BR>
+<A HREF="#SCT0_ScanFiles">3.6. SCT0_ScanFiles</A></UL></UL>
+<!-- ENDTOC -->
+<HR>
+<H1><A NAME="Introduction">1. Introduction</A></H1>
+<P><EM>sio</EM> is a library of routines for doing cross-platform serial I/O between most <EM>Unix</EM> varients and <EM>WIN32</EM>. <EM>WIN16</EM> support is currently not in the code (as I don't have a need for it just at the moment).</P>
+<P><EM>sio</EM> is a collection of routines I've written at various times to handle serial comms that has been reworked into a much nicer interface on which portable application logic can be layered.</P>
+<P><EM>sio</EM> includes a test program (<A HREF="http://www.cryptsoft.com/scard/stest.html">stest</A>) designed for interfacing with low-level <EM>Smartcard</EM> readers. <A HREF="http://www.cryptsoft.com/scard/stest.html">stest</A> also has a <A HREF="http://cuba.xs4all.nl/~tim/scam/">SCAM</A> low-level driver emulation mode for use with the <A HREF="http://cuba.xs4all.nl/~hip/dumbmouse.html">dumbmouse</A> reader. Using the perl-based <A HREF="http://cuba.xs4all.nl/~tim/scam/">SCAM</A> code to probe cards is fairly straight forward.</P>
+<P>The current documentation can be found at <A HREF="http://www.cryptsoft.com/scard/sio.html">http://www.cryptsoft.com/scard/sio.html</A> and the source code can be downloaded from <A HREF="ftp://ftp.cryptsoft.com/scard/">ftp://ftp.cryptsoft.com/scard/</A>.</P>
+<H2><A NAME="Copyright">1.1. Copyright</A></H2>
+<P>Copyright 1993-1997, Tim Hudson. All rights reserved.</P>
+<P>You can do what you like with this code except pretend that you wrote it provided that any derivative of this code includes the above comments unchanged. If you put this in a product then I would like to know about it. Credits in the documentation would be nice but are not essential.</P>
+<H2><A NAME="References">1.2. References</A></H2>
+<UL>
+<LI>ISO 7816 Identification cards - Integrated circuit(s) card with contacts<UL>
+<LI>7816-3 Part 3 - Electronic signals and transmission protocols
+<LI>7816-4 Part 4 - Interindustry commands for interchange</UL></UL>
+<PRE>
+Smartcard Handbook - Wolfgang Rankl, Wolfgang Effing
+ISBN 0471967203
+pp 440
+
+(Translation of Handbuch der Chipkarten - Carl Hanser Verlag)
+</PRE>
+<HR>
+<H1><A NAME="API">2. API</A></H1>
+<P>To use <EM>sio</EM> simply include <EM>sio.h</EM>. Read the header file for the current up to date list of functions.</P>
+<PRE>
+int getATR(char *devicename)
+{
+  SIO_INFO *si;
+  int ch;
+  unsigned char achar;
+
+  si=SIO_Open(devicename);
+  if (si!=NULL) {
+    /* setup for 9600, 8 data, 2 stop, even parity */
+    SIO_SetSpeed(s,9600);
+    SIO_SetDataBits(s,8);
+    SIO_SetStopBits(s,2);
+    SIO_SetParity(s,SIO_PARITY_EVEN);
+    SIO_SetIOMode(s,SIO_IOMODE_INDIRECT);
+
+    /* now actually change the line settings */
+    SIO_WriteSettings(s);
+
+    /* trigger ATR from a Smartcard */
+    SIO_DropRTS(s);
+    SIO_RaiseRTS(s);
+
+    /* read data until there is none available for
+     * the timeout period
+     */
+    while ((ch=SIO_ReadChar(s))!=-1) {
+      achar=(unsigned char)(ch &amp; 0xff);
+      SIO_DumpBuffer(stderr,&amp;achar,1,2);
+    }
+
+    /* finished ... cleanup time */
+    SIO_Close(si);
+  }
+}
+</PRE>
+<H2><A NAME="SIO_INFO">2.1. SIO_INFO</A></H2>
+<P><EM>SIO_INFO</EM> holds all the relevant information related to a given serial connection. The state that is maintained is deliberately hidden from external view. If you stick to using the defined interfaces then your code will be portable (at least the part that talks to <EM>sio</EM>) between <EM>Unix</EM> and <EM>WIN32</EM>.</P>
+<H2><A NAME="SIO_GetVersion">2.2. SIO_GetVersion</A></H2>
+<PRE>
+#define SIO_VERSION_MAJOR       1
+#define SIO_VERSION_MINOR       1
+int SIO_GetVersion(int *vmajor, int *vminor);
+</PRE>
+<P><EM>SIO_GetVersion</EM> returns the major and minor version number of the library.</P>
+<H2><A NAME="SIO_Open">2.3. SIO_Open</A></H2>
+<PRE>
+SIO_INFO *SIO_Open(char *device);
+</PRE>
+<H2><A NAME="SIO_Close">2.4. SIO_Close</A></H2>
+<PRE>
+int SIO_Close(SIO_INFO *s);
+</PRE>
+<H2><A NAME="SIO_SetLogFile">2.5. SIO_SetLogFile</A></H2>
+<PRE>
+int SIO_SetLogFile(SIO_INFO *s,char *name);
+</PRE>
+<P>All data read or written will be logged to the specified file. The file is created or it is truncated if it already exists. The data is logged before any data conversion when writing and after any data conversion or echo suppression when reading. This gives the logical application level view of the data rather than the low-level serial view.</P>
+<H2><A NAME="SIO_DumpBuffer">2.6. SIO_DumpBuffer</A></H2>
+<PRE>
+void SIO_DumpBuffer(FILE *fp,char *buf,int len,int text);
+</PRE>
+<P>Dump a data buffer in different formats.</P>
+<UL>
+<LI>text=0 - hex dump
+<LI>text=1 - printable chars
+<LI>text=2 - both hex and printable chars</UL>
+<H2><A NAME="SIO_ReadSettings">2.7. SIO_ReadSettings</A></H2>
+<PRE>
+int SIO_ReadSettings(SIO_INFO *s);
+</PRE>
+<P>The current serial device parameters are fetched and converted into the <EM>sio</EM> view of the serial device.</P>
+<H2><A NAME="SIO_WriteSettings">2.8. SIO_WriteSettings</A></H2>
+<PRE>
+int SIO_WriteSettings(SIO_INFO *s);
+</PRE>
+<P>The current <EM>sio</EM> view of the serial device is used to update the serial device parameters. Don't forget to call this function otherwise any parameter updates that effect the serial device will not actually be in effect yet.</P>
+<H2><A NAME="SIO_GetSettingsString">2.9. SIO_GetSettingsString</A></H2>
+<PRE>
+char *SIO_GetSettingsString(SIO_INFO *s);
+</PRE>
+<P>Return a terse text representation of the current <EM>sio</EM> comms settings.</P>
+<H2><A NAME="SIO_SetSettingsString">2.10. SIO_SetSettingsString</A></H2>
+<PRE>
+int SIO_SetSettingsString(SIO_INFO *s,char *str);
+</PRE>
+<P>Using the same format returned by <EM>SIO_GetSettingsString</EM> update the internal <EM>sio</EM> comms settings. Don't forget to call <EM>SIO_WriteSettings</EM> to update the device settings to match.</P>
+<H2><A NAME="SIO_WaitForData">2.11. SIO_WaitForData</A></H2>
+<PRE>
+int SIO_WaitForData(SIO_INFO *s,int timedelay);
+</PRE>
+<P>Wait up to <EM>timedelay</EM> microseconds for data activity.</P>
+<H2><A NAME="SIO_ReadChar">2.12. SIO_ReadChar</A></H2>
+<PRE>
+int SIO_ReadChar(SIO_INFO *s);
+</PRE>
+<P>Read a single character. Returns <EM>-1</EM> if no data available.</P>
+<H2><A NAME="SIO_ReadBuffer">2.13. SIO_ReadBuffer</A></H2>
+<PRE>
+int SIO_ReadBuffer(SIO_INFO *s,char *buf,int len);
+</PRE>
+<H2><A NAME="SIO_WriteChar">2.14. SIO_WriteChar</A></H2>
+<PRE>
+int SIO_WriteChar(SIO_INFO *s,int data);
+</PRE>
+<H2><A NAME="SIO_WriteBuffer">2.15. SIO_WriteBuffer</A></H2>
+<PRE>
+int SIO_WriteBuffer(SIO_INFO *s,char *buf,int len);
+</PRE>
+<HR>
+<H1><A NAME="Smartcard Functions">3. Smartcard Functions</A></H1>
+<P><EM>sio</EM> also comes with a number of Smartcard related functions. To use these you need to also include <EM>sct0.h</EM></P>
+<H2><A NAME="SCT0_Reset">3.1. SCT0_Reset</A></H2>
+<PRE>
+int SCT0_Reset(SIO_INFO *s);
+</PRE>
+<P>Reset the Smartcard - should respond with ATR</P>
+<H2><A NAME="SCT0_GetATR">3.2. SCT0_GetATR</A></H2>
+<PRE>
+int SCT0_GetATR(SIO_INFO *s,char *buf,int bufsize);
+</PRE>
+<P>Request ATR from smartcard. <EM>SCT0_GetATR</EM> calls <EM>SCT0_Reset</EM> to perform a standard Smartcard reset.</P>
+<H2><A NAME="SCT0_ScanForATR">3.3. SCT0_ScanForATR</A></H2>
+<PRE>
+int SCT0_ScanForATR(SIO_INFO *s,char *buf, int bufsize);
+</PRE>
+<P>Try all communication settings until a valid ATR is returned. Using this function you can rapidly locate what parameter combination is required for any Smartcard.</P>
+<P><EM>SCT0_ScanForATR</EM> returns the length of the ATR (or 0 if no valid setting is found). The valid ATR is copied into <EM>buf</EM> assuming that there is enough space.</P>
+<H2><A NAME="SCT0_ScanClasses">3.4. SCT0_ScanClasses</A></H2>
+<PRE>
+int SCT0_ScanClasses(SIO_INFO *s, char *classlist);
+</PRE>
+<P>Scan for valid command classes. <EM>classlist</EM> should be an array of 256 chars (one for each class) and on return each index in the array will be set to <EM>1</EM> if the Smartcard responded indicating that the class was valid or <EM>0</EM> if an error was reported.</P>
+<H2><A NAME="SCT0_ScanInstructions">3.5. SCT0_ScanInstructions</A></H2>
+<PRE>
+int SCT0_ScanInstructions(SIO_INFO *s,char theclass,char *inslist);
+</PRE>
+<P>Scan for valid instructions in a particular class. <EM>inslist</EM> should be an array of 256 chars (one for each instruction) and on return each index in the array will be set to <EM>1</EM> if the instruction is valid or <EM>0</EM> if it is not.</P>
+<P><HR WIDTH="80%" ALIGN="Left">
+<STRONG>Note: </STRONG>some instructions (not many) may be valid without any parameters and in which case they will be <B>executed</B> during this scan.
+<HR WIDTH="80%" ALIGN="Left"></P>
+<H2><A NAME="SCT0_ScanFiles">3.6. SCT0_ScanFiles</A></H2>
+<P>int SCT0_ScanFiles(SIO_INFO *s,char theclass,char thefile,char *filelist);</P>
+<P>Scan for all files by <EM>FileID</EM> that start with the given byte of <EM>thefile</EM>. <EM>filelist</EM> should be an array of 256 chars (one for each file) and on return each index in the array will be set to <EM>1</EM> if the file <EM>thefile</EM><EM>index</EM> exists or <EM>0</EM> if it does not.</P>
+<HR>
+
+</BODY>
+</HTML>

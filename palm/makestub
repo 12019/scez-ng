@@ -1,0 +1,24 @@
+#!/bin/sh
+# makestub <libfile> <libid> <libname> <objs...>
+#
+# e.g.
+# makestub SCEZmain "SCEZ Main" SC01 scgeneral.o screader.o scsmartcard.o sct0.o sct1.o
+#
+AR=m68k-palmos-coff-ar
+BUILDPRC=build-prc
+EXPLIST=m68k-palmos-coff-exportlist
+CC=m68k-palmos-coff-gcc
+NM=m68k-palmos-coff-nm
+OBJRES=m68k-palmos-coff-obj-res
+STUBGEN=m68k-palmos-coff-stubgen
+
+$AR rcs lib${1}.a $4
+$EXPLIST lib${1}.a > ${1}.exp
+$STUBGEN "$2" $3 ${1}stub.c ${1}Lib.S < ${1}.exp
+$CC -c ${1}stub.c
+$AR rcs lib${1}.sa ${1}stub.o
+
+#$CC -L. -Lpalm/pilotSSLeay-2.01 -shared -o ${1}Lib ${1}Lib.S lib${1}.a -lc -lSIO -ldes -lSCEZmain -lSCEZreader -lSCEZcard1 -lSCEZcard2
+#$OBJRES -l ${1}Lib
+#$BUILDPRC -l ${1}Lib.prc "$2" $3 GLib0000.${1}Lib.grc data0000.${1}Lib.grc rloc0000.${1}Lib.grc
+

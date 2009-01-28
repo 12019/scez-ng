@@ -1,0 +1,2191 @@
+This is scez.info, produced by makeinfo version 4.11 from scez.texi.
+
+This manual should help you to write applications using the smart card
+library SCEZ.
+
+   Copyright (C) 2000 Matthias Brüstle
+
+
+File: scez.info,  Node: Top,  Next: Overview,  Prev: (dir),  Up: (dir)
+
+* Menu:
+
+* Overview::               Overview of SCEZ.
+* Example application::    A simple program which demonstrates the usage of
+                           SCEZ.
+* scGeneral functions::    Functions in scgeneral.c.
+* scReader functions::     Functions in screader.c.
+* scSmartcard functions::  Functions in scsmartcard.c.
+* scSmartcafe functions::  Functions in scsmartcafe.c. (Representative example)
+* Example application source::  Source of simple example program.
+* Index::                  Index.
+
+
+File: scez.info,  Node: Overview,  Next: Example application,  Prev: Top,  Up: Top
+
+1 Overview
+**********
+
+SCEZ is a library to make it easier for a programmer to use smart cards.
+It is developed under GNU/Linux, but because it is written in C to make
+it as portable as possible, it has been ported easily to other Unices,
+PalmOS, and MS-Windows9x.
+
+   All source files of SCEZ begin with `sc'. The core of SCEZ consists
+of: 
+
+   * `scinternal.h': This contains the defines only required by the
+     source of SCEZ itself. It is not used by applications programs
+     using SCEZ.
+
+   * `scgeneral.c', `scgeneral.h': This contains the main defines of
+     SCEZ and a few support functions.
+
+   * `screader.c', `screader.h': Here is the framework for the card
+     readers.
+
+   * `scsmartcard.c', `scsmartcard.h': Here are a few functions to
+     handle the smart card drivers and a function to detect a card
+     using its ATR.
+
+   For the card and terminal specific parts there are separate modules.
+The modules for card readers are currently: 
+
+   * `scacr20.c', `scacr20.h': This is a driver for the ACS ACR20S aka
+     Cybermouse.
+
+   * `scctapi.c', `scctapi.h': This is not really a driver for a card
+     reader, but implements a interface to CT-API card reader drivers.
+
+   * `scdumbmouse.c', `scdumbmouse.h': This is the module for the Dumb
+     Mouse and other home grown readers.
+
+   * `scgcr400.c', `scgcr400.h': This driver for the Gemplus GCR400 is
+     unfortunately untested.
+
+   * `screflex60.c', `screflex60.h': This is for the Schlumberger
+     Reflex62 and Reflex64. The PIN pad on the Reflex64 is currently
+     not supported.
+
+   * `sctowitoko.c', `sctowitoko.h': This module is for the Towitoko
+     Chipdrive terminals.
+
+   Additionally to these card terminals modules there exist support
+modules to make the implementation of card reader drivers easier: 
+
+   * `scpts.c', `scpts.h': This implements routines to do a PTS, which
+     sets different communications parameters after the reset of a card.
+
+   * `sct0.c', `sct0.h': These files contain routines to do the
+     protocol T=0.
+
+   * `sct1.c', `sct1.h': The more complex protocol T=1 is handled by
+     this code.
+
+   The modules for the smart cards are currently: 
+
+   * `scbasiccard.c', `scbasiccard.h': Zeitcontrol Compact BasicCard
+     1.1, Zeitcontrol Enhanced BasicCard 2.x.
+
+   * `sccryptoflex.c', `sccryptoflex.h': Schlumberger Cryptoflex.
+
+   * `sccyberflex.c', `sccyberflex.h': Schlumberger Cyberflex Access.
+
+   * `scgeldkarte.c', `scgeldkarte.h': Geldkarte.
+
+   * `scgpk4000.c', `scgpk4000.h': Gemplus GPK4000.
+
+   * `scgsmsim.c', `scgsmsim.h': GSM SIM.
+
+   * `scmfc.c', `scmfc.h': IBM/Comcard MFC.
+
+   * `scmultiflex.c', `scmultiflex.h': Schlumberger Multiflex 3K,
+     Schlumberger Multiflex 8K.
+
+   * `scpayflex.c', `scpayflex.h': Schlumberger Payflex.
+
+   * `scproton.c', `scproton.h': Proton, Cash.
+
+   * `scsmartcafe.c', `scsmartcafe.h': Giesecke & Devrient Sm@rtCafe'.
+
+   * `sctcos.c', `sctcos.h': Telesec TCOS 2.0 (PKS-Card, Netkey Card).
+
+   When you need not all smart card drivers, you have to remove the
+unnecessary calls in scSmartcardInit by undefining the `WITH_*'
+defines. The same is for readers and scReaderInit.
+
+   It is strongly suggested to read the SCEZ README file, too. It
+contains informations about the current state of SCEZ. Here is also
+information, where you can get the technical manual for some cards. You
+will need the card manuals to understand the card specific drivers in
+SCEZ. In case you are looking for cards and readers there are also
+pointers in the README.
+
+
+File: scez.info,  Node: Example application,  Next: scGeneral functions,  Prev: Overview,  Up: Top
+
+2 Example application
+*********************
+
+This chapter describes a simple application, which just selects a
+application on a Giesecke & Devrient Sm@artCafe'. The example code is
+without most of the error handling.
+
+   First you need to include the required SCEZ include files. You have
+to include first `scez/scgeneral.h' and then any card specific include
+files. Including `scez/screader.h' and `scez/scsmartcard.h' is not
+required anymore, because these are included by `scez/scgeneral.h'.  
+
+     #include <scez/scgeneral.h>
+     #include <scsmartcafe.h>
+     
+
+   You can then set default parameters for the used card terminal. The
+following method makes it possible to override the default settings by
+compiler arguments.
+
+     #ifndef READER_TYPE
+     #define READER_TYPE SC_READER_DUMBMOUSE
+     #endif /* READER_TYPE */
+     #ifndef READER_SLOT
+     #define READER_SLOT 1
+     #endif /* READER_SLOT */
+     #ifndef READER_PORT
+     #define READER_PORT "0"
+     #endif /* READER_PORT */
+
+   `READER_TYPE' is the used driver. `READER_SLOT' is the slot of a
+reader. Currently no reader with multiple slots is supported, so this
+has to be `1'. `READER_PORT' are the interface parameters to access the
+card reader. In this case `0' tells the driver to access the reader at
+the first serial port. The parameter is encased in double quotes,
+because it is a character string.
+
+   The main function is starting with the declaration of the variables.
+
+     int main (int argc, char *argv[] )
+     {
+         SC_READER_INFO *ri;
+         SC_CARD_INFO *ci;
+         SC_READER_CONFIG rc;
+
+         int ret;
+
+         BYTE resp[ SC_GENERAL_SHORT_DATA_SIZE+2 ];
+         int resplen;
+   
+   `SC_READER_INFO' is the struct containing the information for SCEZ
+how to access the card reader. `SC_CARD_INFO' contains information
+about the card and protocol state. `SC_READER_CONFIG' is needed to get
+the configuration to access the card terminal. RET will hold the return
+status of functions. RESP and RESPLEN will be used to receive the
+response of the card. This buffer must be always the maximum response
+size of `SC_GENERAL_SHORT_DATA_SIZE+2' (258 bytes).
+
+   Before using any function from SCEZ `scInit' must be called.
+
+         scInit();
+   
+   One way to get the configuration of the terminal to use is the
+`scReaderGetConfig' function. Depending on operating system it uses the
+program arguments and/or the environment to get the configuration. The
+`SC_READER_CONFIG' struct should be initialised to have a default
+configuration in case `scReaderGetConfig' does not find any data.
+
+         rc.type=READER_TYPE;
+         rc.slot=READER_SLOT;
+         rc.param=READER_PORT;
+
+         scReaderGetConfig( argc, argv, &rc );
+   
+   Then you can initialise the `SC_READER_INFO' object.
+
+         ri = scGeneralNewReader( rc.type, rc.slot );
+   
+   This is also not the wrong point to initialise the `SC_CARD_INFO'
+object.
+
+         ci = scGeneralNewCard( );
+   
+   The next steps initialise the reader, checking with
+`scReaderCardStatus' if a card is present and activating it.
+
+         /* Init Reader */
+         scReaderInit( ri, rc.param );
+
+         /* Get Card Status */
+         scReaderCardStatus( ri );
+         if( !(ri->status&SC_CARD_STATUS_PRESENT) ) { /* No card */ }
+
+         /* Activate Card */
+         scReaderActivate( ri );
+   
+   After this the card can be reseted.
+
+         /* Reset Card */
+         scReaderResetCard( ri, ci );
+   
+   The reset writes the ATR from the card into the `SC_CARD_INFO'
+structure.  This can be processed with `scSmartcardGetCardType', which
+compares the ATR to a list of ATRs it has to find out which card is
+inserted.
+
+         /* Get Card Type */
+         scSmartcardGetCardType( ci );
+         if( (ci->type&0xFFFFFF00)!=SC_CARD_SMARTCAFE ) { /* Wrong card */ }
+   
+   If it is the correct card, you can send the Select command to it.
+`scSmartcafeCmdSelect' takes as a third argument the AID and as a
+fourth argument the length of the AID. It builds then the command `00
+A4 04 00 09 D2 76 00 00 92 FF FF FF' and sends it to the card.  The
+status word received is copied to the `SC_CARD_INFO' struct `ci'.
+Received data is copied to RESP and RESPLEN is set to the length of
+data.
+
+   The check of the status word could have also be done with
+`scSmartcardSimpleProcessSW'.
+
+         ret = scSmartcafeCmdSelect( ri, ci,
+                 (BYTE *) "\xD2\x76\x00\x00\x92\xFF\xFF\xFF", 9,
+                 resp, &resplen );
+         if( (ret!=SC_EXIT_OK) || (ci->sw[0]!=0x90) || (ci->sw[1]!=0x00) )
+         { /* Some error has ocured */ }
+
+   After using the card it is deactivated, then the reader is
+disconnected.
+
+         scReaderDeactivate( ri );
+         scReaderShutdown( ri );
+   
+   Finally the memory of the structs can be freed.
+
+         scGeneralFreeCard( &ci );
+         scGeneralFreeReader( &ri );
+   
+   And after the last SCEZ function is used, SCEZ is closed with
+`scEnd'.
+
+         scEnd();
+
+         return( 0 );
+     }
+   
+   Wasn't this simple? The whole example program without annoying
+comments is in the appendix. To make it a real program you have just to
+add checks to see if the functions did return `SC_EXIT_OK'.
+
+
+File: scez.info,  Node: scGeneral functions,  Next: scReader functions,  Prev: Example application,  Up: Top
+
+3 scGeneral functions
+*********************
+
+3.1 Defines
+===========
+
+3.1.1 Configuration defines
+---------------------------
+
+These configuration defines are currently in `scez/scinternal.h'.  This
+will probably change in the process of autoconfiscation.  
+
+     #define WITH_BASICCARD
+     #define WITH_CRYPTOFLEX
+     #define WITH_CYBERFLEX
+     #define WITH_GELDKARTE
+     #define WITH_GPK4000
+     #define WITH_GPK8000
+     #define WITH_GSMSIM
+     #define WITH_MFC
+     #define WITH_MULTIFLEX
+     #define WITH_OPENPLATFORM
+     #define WITH_PROTON
+     #define WITH_QUICK
+     #define WITH_SMARTCAFE
+     #define WITH_TCOS
+
+     #define WITH_ACR20
+     #define WITH_CTAPI
+     #define WITH_DUMBMOUSE
+     #define WITH_GCR400
+     #define WITH_GPR400
+     #define WITH_INTERTEX
+     #define WITH_REFLEX60
+     #define WITH_TOWITOKO
+
+   These defines control, which card and reader modules will be included
+in `scSmartcardInit' and `scReaderInit'. If you want to omit a card or
+reader module, you must not set the appropriate define.
+
+3.1.2 Card type defines
+-----------------------
+
+     #define SC_CARD_UNKNOWN             0x0000
+     #define SC_CARD_MULTIFLEX           0x0100
+     #define SC_CARD_MULTIFLEX_3K        0x0101 /* 3kB EEPROM */
+     #define SC_CARD_MULTIFLEX_8K        0x0102 /* 8kB EEPROM, more features */
+     #define SC_CARD_MULTIFLEX_8K_DES    0x0103 /* Full DES option */
+     #define SC_CARD_MULTIFLEX_4K        0x0104 /* 4kB EEPROM */
+     #define SC_CARD_CRYPTOFLEX          0x0200
+     #define SC_CARD_CRYPTOFLEX_DES      0x0201 /* Full DES option */
+     #define SC_CARD_CRYPTOFLEX_KEYGEN   0x0202 /* Full DES / RSA Keygen */
+     #define SC_CARD_CRYPTOFLEX_8K       0x0203 /* with 8KB EEPROM */
+     #define SC_CARD_CYBERFLEX           0x0300
+     #define SC_CARD_CYBERFLEX_CRYPTO    0x0301
+     #define SC_CARD_CYBERFLEX_AUGCRYPTO 0x0302
+     #define SC_CARD_PAYFLEX             0x0400
+     #define SC_CARD_PAYFLEX_1K_USER     0x0401
+     #define SC_CARD_PAYFLEX_1K_SAM      0x0402
+     #define SC_CARD_PAYFLEX_4K_USER     0x0403
+     #define SC_CARD_PAYFLEX_4K_SAM      0x0404
+     #define SC_CARD_PAYFLEX_MICRO       0x0405
+     #define SC_CARD_GPK4000             0x0500
+     #define SC_CARD_GPK4000_S           0x0501
+     #define SC_CARD_GPK4000_SP          0x0502 /* "privacy" */
+     #define SC_CARD_GPK4000_SDO         0x0503 /* Encryption/Key Generation */
+     #define SC_CARD_GPK2000             0x0600
+     #define SC_CARD_GPK2000_S           0x0601
+     #define SC_CARD_GPK2000_SP          0x0602 /* "privacy" */
+     #define SC_CARD_MPCOS_EMV           0x0700
+     #define SC_CARD_MPCOS_EMV_1B        0x0701 /* 1 Byte data units */
+     #define SC_CARD_MPCOS_EMV_4B        0x0702 /* 4 Byte data units */
+     #define SC_CARD_GELDKARTE           0x0800
+     #define SC_CARD_GELDKARTE_3         0x0801 /* Geldkarte v3 */
+     #define SC_CARD_TCOS                0x0900
+     #define SC_CARD_TCOS_44             0x0901 /* SLE44 Chip */
+     #define SC_CARD_TCOS_66             0x0902 /* SLE66 Chip */
+     #define SC_CARD_TCOS_66P            0x0903 /* SLE66P Chip */
+     #define SC_CARD_BASICCARD           0x0A00
+     #define SC_CARD_BASICCARD_COMP      0x0A01
+     #define SC_CARD_BASICCARD_ENH       0x0A02
+     #define SC_CARD_BASICCARD_ENH_3     0x0A03
+     #define SC_CARD_BRADESCO            0x0B00 /* Moeda Eletronica */
+     #define SC_CARD_GSMSIM              0x0C00
+     #define SC_CARD_CHIPPER             0x0D00 /* Dutch Post money card */
+     #define SC_CARD_PROTON              0x0E00
+     #define SC_CARD_PROTON_CASH         0x0E01 /* Swiss Cash card */
+     #define SC_CARD_PROTON_CHIPKNIP     0x0E02 /* Dutch bank money card */
+     #define SC_CARD_STARCOS             0x0F00 /* From G&D. */
+     #define SC_CARD_STARCOS_S21         0x0F01
+     #define SC_CARD_STARCOS_SPK22       0x0F02
+     #define SC_CARD_STARCOS_SPK23       0x0F03
+     #define SC_CARD_SMARTCAFE           0x1000 /* JavaCard from G&D */
+     #define SC_CARD_SMARTCAFE_11        0x1001
+     #define SC_CARD_MFC                 0x1100 /* Comcard (Ex-IBM) MFC */
+     #define SC_CARD_MFC_41              0x1101
+     #define SC_CARD_GPK8000             0x1200
+     #define SC_CARD_GPK8000_8K          0x1201 /* This is the real GPK8000 */
+     #define SC_CARD_GPK8000_16K         0x1202 /* This is the GPK16000 */
+     #define SC_CARD_PAYCARD             0x1300
+     #define SC_CARD_QUICK               0x1400
+     #define SC_CARD_GEMXPRESSO          0x1500
+     #define SC_CARD_GEMXPRESSO_211PK    0x1501
+     #define SC_CARD_JIB                 0x1600
+     #define SC_CARD_VENDOR1             0xFFFFFD00
+     #define SC_CARD_VENDOR2             0xFFFFFE00
+     #define SC_CARD_VENDOR3             0xFFFFFF00
+
+   These are the defines for the card types. A card type is 4 bytes
+wide.  The three more significant bytes denote the major card type,
+e.g. `SC_CARD_CRYPTOFLEX == 0x0200'.  The least significant byte
+denotes the subtype, e.g.  `SC_CARD_CRYPTOFLEX_8K == 0x0203'. The
+existence of a card definition does not necessarily mean, that a driver
+for this card exists.
+
+   The last three card types are reserved for individual usage.
+
+3.1.3 Reader type defines
+-------------------------
+
+     #define SC_READER_UNKNOWN       0x00
+     #define SC_READER_DUMBMOUSE     0x01
+     #define SC_READER_TOWITOKO      0x02
+     #define SC_READER_CTAPI         0x03
+     #define SC_READER_CHIPI         0x04
+     #define SC_READER_ACR20         0x05
+     #define SC_READER_B1            0x06
+     #define SC_READER_GCR400        0x07
+     #define SC_READER_REFLEX60      0x08
+     #define SC_READER_REFLEX20      0x09
+     #define SC_READER_VENDOR1       0xF0
+     #define SC_READER_VENDOR2       0xF1
+     #define SC_READER_VENDOR3       0xF2
+     #define SC_READER_AUTO          0xFE
+
+   The are the defines for the reader major types. The minor types are
+in the reader specific header files. The existence of a definition does
+not necessarily mean, that a driver for this reader exists.
+
+   The three vendor card types are reserved for individual usage.
+
+   `SC_READER_AUTO' does currently not have any meaning.
+
+3.1.4 APDU case defines
+-----------------------
+
+     #define SC_APDU_CASE_NONE           0
+     #define SC_APDU_CASE_1              1
+     #define SC_APDU_CASE_2_SHORT        2
+     #define SC_APDU_CASE_3_SHORT        3
+     #define SC_APDU_CASE_4_SHORT        4
+     #define SC_APDU_CASE_2_EXT          5
+     #define SC_APDU_CASE_3_EXT          6
+     #define SC_APDU_CASE_4_EXT          7
+
+   The extended cases are currently not supported.
+
+3.1.5 Protocol type defines
+---------------------------
+
+     #define SC_PROTOCOL_UNKNOWN 0xFF
+     #define SC_PROTOCOL_T0      0x00
+     #define SC_PROTOCOL_T1      0x01
+     #define SC_PROTOCOL_T14     0x0E
+     #define SC_PROTOCOL_I2C     0x10
+     #define SC_PROTOCOL_2WIRE   0x20
+     #define SC_PROTOCOL_3WIRE   0x40
+
+   In the current version of SCEZ only `SC_PROTOCOL_T0' and
+`SC_PROTOCOL_T1' is supported.
+
+3.1.6 Card status defines
+-------------------------
+
+     #define SC_CARD_STATUS_PRESENT  0x01    /* Card present. */
+     #define SC_CARD_STATUS_CHANGED  0x02    /* Card changed. */
+
+   `SC_CARD_STATUS_CHANGED' is not provided by every reader.
+
+3.1.7 Data size defines
+-----------------------
+
+     #define SC_GENERAL_SHORT_DATA_SIZE      256
+     #define SC_GENERAL_EXTENDED_DATA_SIZE   65536
+     #define SC_GENERAL_MAX_DATA_SIZE        65536
+
+   `SC_GENERAL_SHORT_DATA_SIZE' is the maximum data size for card
+responses. Adding 2 for the status word makes this the size buffers for
+card responses should have.
+
+   The other two data sizes are currently not used.
+
+3.2 Structs
+===========
+
+3.2.1 SC_READER_INFO
+--------------------
+
+     typedef struct sc_reader_info {
+         int         major;  /* main reader type */
+         int         minor;  /* minor reader type */
+         int         slot;   /* slot number (ICC1:1, ICC2:2, ...) */
+         int         status; /* Card Status */
+         BOOLEAN     pinpad; /* card reader has PIN pad. */
+         BOOLEAN     display;    /* card reader has display. */
+         LONG        etu;    /* etu in us */
+         int         maxc;   /* Maximum length of command. Handling driver
+                              * specific. */
+         int         maxr;   /* Maximum length of response. Handling driver
+                              * specific. */
+         SIO_INFO    *si;    /* serial port handle (ACR20S, Dumbmouse,
+                              * GCR 400, Towitoko) */
+         WORD        ctn;    /* cardterminal number (CT-API) */
+         SC_T1_INFO  t1;     /* T=1PC readers (B1) */
+         /* function pointers */
+         ...
+     } SC_READER_INFO;
+
+   MAJOR and MINOR contain the card terminal types.
+
+   SLOT contains at the moment always `1', because currently no reader
+with more than one slot is supported.
+
+   STATUS holds the status of the card after a call to
+`scReaderCardStatus'.
+
+   The variables PINPAD and DISPLAY have currently no meaning.  In the
+future, when PIN pad and display is supported by SCEZ, you can use
+these variables to determine what to do, when you try to verify a PIN.
+
+   The rest of the variables contain information for the reader driver,
+which is normally not interesting for a programmer using SCEZ.
+
+3.2.2 SC_CARD_INFO
+------------------
+
+     typedef struct sc_card_info {
+         LONG    type;       /* Card type */
+         BYTE    atr[32];    /* ATR */
+         int     atrlen;     /* Length of ATR */
+         int     protocol;   /* Used protocol */
+         BOOLEAN direct;     /* Direct convention */
+         SC_T0_INFO  t0;     /* for T=0 */
+         SC_T1_INFO  t1;     /* for T=1 */
+         SC_CRYPT_INFO   crypt;  /* Encryption status */
+         BYTE    cla;        /* CLA byte for Cyberflex. */
+         BYTE    swok[5];    /* SC_SW_OK */
+         BYTE    swav[5];    /* SC_SW_AVAIL */
+         LONG    memsize;    /* EEPROM size (I2C,2W,3W) */
+         BYTE    sw[2];      /* SW1 SW2 */
+         /* function pointers */
+         ...
+     } SC_CARD_INFO;
+
+   TYPE contains the card type. ATR/ATRLEN contains the ATR after a
+successful reset of a card.
+
+   Communication parameters for T=0 are in T0, for T=1 in T1.  Relevant
+for `scReaderSendAPDU' is in the case of T=0 also SWAV (and SWOK),
+which is needed to execute case 4 commands.
+
+   Cryptographic keys for the communication with the card are stored in
+CRYPT.
+
+   SW is used to return the status word by the card drivers. It is not
+used by `scReaderT0', `scReaderT1' or `scReaderSendAPDU'.
+
+3.2.3 SC_T0_INFO
+----------------
+
+     typedef struct sc_t0_info {
+         BYTE    d;          /* D */
+         BYTE    wi;         /* WI */
+         LONG    wwt;        /* Work Waiting Time in etu */
+         BYTE    getrsp[5];  /* GET RESPONSE Header */
+     } SC_T0_INFO;
+
+3.2.4 SC_T1_INFO
+----------------
+
+     typedef struct sc_t1_info {
+         BYTE    nad;        /* NAD */
+         BYTE    ns;         /* N(S) */
+         BYTE    nr;         /* N(R) */
+         BYTE    ifsc;       /* Information Field Size Card */
+         BYTE    ifsd;       /* Information Field Size Device */
+         BOOLEAN ifsreq;     /* S(IFS Req) already sent? */
+         LONG    cwt;        /* Character Waiting Time in etu -11 etu */
+         LONG    bwt;        /* Block Waiting Time in us */
+         BYTE    rc;         /* Redundancy Check (LRC/CRC) */
+     } SC_T1_INFO;
+
+3.2.5 SC_CRYPT_INFO
+-------------------
+
+     typedef struct sc_crypt_info {
+         BOOLEAN encrypt;    /* Encrypt commands */
+         BOOLEAN mac;        /* Append MAC to commands */
+         int     algo;       /* Encryption algorithm */
+         int     keynum;     /* Key number */
+         BYTE    iv[8];      /* Initialisation vector */
+         BYTE    key[16];    /* Encryption key */
+         BYTE    pin[8];     /* PIN */
+     } SC_CRYPT_INFO;
+
+3.2.6 SC_APDU
+-------------
+
+     typedef struct sc_apdu {
+         int     cse;        /* APDU case */
+         BYTE    *cmd;       /* C-APDU */
+         int     cmdlen;     /* length of C-APDU */
+         BYTE    *rsp;       /* R-APDU */
+         int     rsplen;     /* length of R-APDU */
+     } SC_APDU;
+
+3.3 Functions
+=============
+
+3.3.1 scInit
+------------
+
+
+     The `scInit' function is used to initialise the SCEZ library. It
+     must be called before any other SCEZ library function.
+
+`int scInit( );'
+
+Parameters
+     None
+
+See also
+     `scEnd'.
+
+3.3.2 scEnd
+-----------
+
+
+     The `scEnd' function is used to shutdown the SCEZ library after
+     use.  It should be called after you are finished with SCEZ.
+
+`int scEnd( );'
+
+Parameters
+     None
+
+See also
+     `scInit'.
+
+3.3.3 scGeneralNewReader
+------------------------
+
+
+     The `scGeneralNewReader' function is used to allocate a
+     `SC_READER_INFO' struct and initialise it.
+
+`SC_READER_INFO *scGeneralNewReader( int TYPE, int SLOT );'
+
+Parameters
+     TYPE
+
+
+     The major type of the reader, e.g. `SC_READER_DUMBMOUSE'.
+
+
+     SLOT
+
+
+     The slot in the reader. This is currently always '1'.
+
+See also
+     `scGeneralFreeReader', `scReaderExpandPort'.
+
+3.3.4 scGeneralFreeReader
+-------------------------
+
+
+     The `scGeneralFreeReader' function is used to free the memory of a
+     `SC_READER_INFO' struct.
+
+`void scGeneralFreeReader( SC_READER_INFO **RI );'
+
+Parameters
+     RI
+
+
+     The pointer to the address of the `SC_READER_INFO' struct.
+
+See also
+     `scGeneralNewReader'.
+
+3.3.5 scGeneralNewCard
+----------------------
+
+
+     The `scGeneralNewCard' function is used to allocate a
+     `SC_CARD_INFO' struct and initialise it.
+
+`SC_CARD_INFO *scGeneralNewCard( );'
+
+Parameters
+     None
+
+See also
+     `scGeneralFreeCard'.
+
+3.3.6 scGeneralFreeCard
+-----------------------
+
+
+     The `scGeneralFreeCard' function is used to free the memory of a
+     `SC_CARD_INFO' struct.
+
+`void scGeneralFreeCard( SC_CARD_INFO **CI );'
+
+Parameters
+     CI
+
+
+     The pointer to the address of the `SC_CARD_INFO' struct.
+
+See also
+     `scGeneralNewCard'.
+
+3.3.7 scGeneralNewAPDU
+----------------------
+
+
+     The `scGeneralNewAPDU' function is used to allocate a `SC_APDU'
+     struct and initialise it.
+
+`SC_APDU *scGeneralNewAPDU( );'
+
+Parameters
+     None
+
+See also
+     `scGeneralFreeAPDU'.
+
+3.3.8 scGeneralFreeAPDU
+-----------------------
+
+
+     The `scGeneralFreeAPDU' function is used to free the memory of a
+     `SC_APDU' struct.
+
+`void scGeneralFreeAPDU( SC_APDU **APDU );'
+
+Parameters
+     APDU
+
+
+     The pointer to the address of the `SC_APDU' struct.
+
+See also
+     `scGeneralNewAPDU'.
+
+3.3.9 scGeneralReverseString
+----------------------------
+
+
+     The `scGeneralReverseString' function is used to reverse the bit
+     order of each `BYTE' of a `BYTE' string.
+
+`int scGeneralReverseString( BYTE *DATA, int LEN );'
+
+Parameters
+     DATA
+
+
+     The address of the `BYTE' array.
+
+
+     LEN
+
+
+     The length of the `BYTE' array.
+
+3.3.10 scGeneralGetRandStr
+--------------------------
+
+
+     The `scGeneralGetRandStr' function is used to write random data
+     into a `BYTE' array. Unfortunately it is not guaranteed, that this
+     random data is true random data.
+
+`int scGeneralGetRandStr( BYTE *DATA, int LEN );'
+
+Parameters
+     DATA
+
+
+     The address of the `BYTE' array.
+
+
+     LEN
+
+
+     The length of the `BYTE' array.
+
+3.3.11 scGeneralCleanKeys
+-------------------------
+
+
+     The `scGeneralCleanKeys' function is used to reset the key fields
+     in the `SC_CARD_INFO' struct.
+
+`int scGeneralCleanKeys( SC_CARD_INFO *CI );'
+
+Parameters
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+See also
+     `scGeneralCleanCI'.
+
+3.3.12 scGeneralCleanCI
+-----------------------
+
+
+     The `scGeneralCleanCI' function is used to reset the T=1 protocol
+     status and key fields in the `SC_CARD_INFO' struct.
+
+`int scGeneralCleanCI( SC_CARD_INFO *CI );'
+
+Parameters
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+See also
+     `scGeneralCleanKeys'.
+
+3.3.13 scGeneralBinHex
+----------------------
+
+
+     The `scGeneralBinHex' function is used to convert binary data to
+     ASCII coded hexadecimal and back.
+
+`int scGeneralBinHex( BOOLEAN TOHEX, const BYTE *IN, int INLEN, BYTE *OUT );'
+
+Parameters
+     TOHEX
+
+
+     If `TRUE' the data is converted from binary to ASCII coded
+     hexadecimal, else in the other direction.
+
+
+     IN
+
+
+     The address of the `BYTE' array to be converted.
+
+
+     INLEN
+
+
+     The length of the `BYTE' array to be converted.
+
+
+     OUT
+
+
+     The address of the `BYTE' array where the result should be written.
+
+
+File: scez.info,  Node: scReader functions,  Next: scSmartcard functions,  Prev: scGeneral functions,  Up: Top
+
+4 scReader functions
+********************
+
+4.1 Defines
+===========
+
+None.
+
+4.2 Structs
+===========
+
+None.
+
+4.3 Functions
+=============
+
+4.3.1 scReaderExpandPort
+------------------------
+
+
+     The `scReaderExpandPort' function is used to expand a string with
+     a number to the platform specific device name of the serial port
+     with this number. Unknown strings are passed unmodified.
+
+`char *scReaderExpandPort( char *PN );'
+
+Parameters
+     PN
+
+
+     Character string denoting the port number, e.g. `"1"'.
+
+
+
+Remarks
+     Future versions may support additional port types, e.g. PS/2.
+
+See also
+     `scGeneralNewReader'.
+
+4.3.2 scReaderGetConfig
+-----------------------
+
+
+     The `scReaderGetConfig' function is used to read the configuration
+     of the card terminal.
+
+     Before calling this function, RC should be initialised with the
+     default values. Variables, which should not have default values,
+     should also be initialised: TYPE should be set to
+     `SC_READER_UNKNOWN', SLOT to `0' and PARAM to `NULL'.
+
+     `scReaderGetConfig' looks in following order at these resources
+     and substitutes the value in RC if it finds there new settings:
+
+    - Compile time defaults. (These are already in RC.)
+
+    - Keeper (in this order): global, local, user settings (only under GNU/Linux).
+
+    - Environment.
+
+    - Program arguments. (Currently disabled.)
+
+     SCEZ uses in Keeper the variables */SCEZ/TYPE, */SCEZ/SLOT and
+     */SCEZ/PARAM with * being GLOBAL, LOCAL or USER. TYPE and SLOT are
+     integers.  PARAM is a string. For more information about Keeper,
+     see the documentation in the Keeper distribution.  
+
+     The environment variable controlling the reader setting is
+     SCEZ_READER.  It consists of TYPE, SLOT and PARAM, which are
+     separated by commas. The reader type has to be one of: 
+
+    - `ACR20'
+
+    - `CTAPI'
+
+    - `DUMBMOUSE'
+
+    - `REFLEX60'
+
+    - `TOWITOKO'
+
+     Examples for valid variable settings are:
+
+    `DUMBMOUSE,1,0'
+
+    `REFLEX60,1,/dev/ttyS1'
+
+`int scReaderGetConfig( int argc, char *argv[], SC_READER_CONFIG *RC );'
+
+Parameters
+     ARGC
+
+
+     The argument count supplied to main.
+
+
+     ARGV
+
+
+     The argument strings supplied to main.
+
+
+     RC
+
+
+     The address of the `SC_READER_CONFIG' struct, where the results
+     are written to. This struct should be preinitialised with the
+     default values.
+
+See also
+     `scGeneralNewReader', `scReaderExpandPort'.
+
+4.3.3 scReaderCheckAPDU
+-----------------------
+
+
+     The `scReaderCheckAPDU' function is used to check if a `SC_APDU'
+     struct is filled consistently.
+
+`int scReaderCheckAPDU( const SC_APDU *APDU, BOOLEAN *T0 );'
+
+Parameters
+     APDU
+
+
+     The address of the `SC_APDU' struct.
+
+
+     T0
+
+
+     TRUE if it is a T=0 command.
+
+4.3.4 scReaderInit
+------------------
+
+
+     The `scReaderInit' function is used to initialise a card reader
+     module and open a communication channel to a reader.
+
+`int scReaderInit( SC_READER_INFO *RI, const char *PARAM );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     PARAM
+
+
+     This character string contains the interface parameters for the
+     card terminal driver, e.g. the serial port device.
+
+See also
+     `scReaderExpandPort', `scReaderShutdown'.
+
+4.3.5 scReaderShutdown
+----------------------
+
+
+     The `scReaderShutdown' function is used to disconnect from a
+     reader.
+
+`int scReaderShutdown( SC_READER_INFO *RI );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+See also
+     `scReaderInit'.
+
+4.3.6 scReaderActivate
+----------------------
+
+
+     The `scReaderActivate' function is used to supply the card with
+     power and in future implementations depending on the reader to
+     request a card from the user before this.
+
+`int scReaderActivate( SC_READER_INFO *RI );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+Remarks
+     This needs some work to clarify the functionality, so the function
+     may change.
+
+See also
+     `scReaderDeactivate'.
+
+4.3.7 scReaderDeactivate
+------------------------
+
+
+     The `scReaderDeactivate' function is used to disconnect the power
+     from the card and depending on the reader to throw the card out.
+
+`int scReaderDeactivate( SC_READER_INFO *RI );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+Remarks
+     This needs some work to clarify the functionality, so the function
+     may change.
+
+See also
+     `scReaderActivate'.
+
+4.3.8 scReaderCardStatus
+------------------------
+
+
+     The `scReaderCardStatus' function is used to get information about
+     the card status.
+
+`int scReaderCardStatus( SC_READER_INFO *RI );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+Remarks
+     The functionality depends on the type of reader, e.g. a Dumb Mouse
+     does not give information if the card has been changed.
+
+See also
+     Card status defines.
+
+4.3.9 scReaderResetCard
+-----------------------
+
+
+     The `scReaderResetCard' function is used to reset the card. This
+     does normally a cold reset.
+
+`int scReaderResetCard( SC_READER_INFO *RI, SC_CARD_INFO *CI );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+4.3.10 scReaderT0
+-----------------
+
+
+     The `scReaderT0' function is used to send a command using the T=0
+     protocol to the card. The difference to `scReaderT1' is the
+     handling of Case 4 commands.
+
+`int scReaderT0( SC_READER_INFO *RI, SC_CARD_INFO *CI, SC_APDU *APDU );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+
+     APDU
+
+
+     The address of the `SC_APDU' struct. `apud->rsp' must contain
+     enough space for the maximum possible answer length. In case of
+     short commands this is 256 bytes for response data and 2 bytes for
+     the status word.
+
+Remarks
+     This functions is normally not used by the application programmer,
+     but it can be useful, if you need to do the Get Response yourself.
+
+See also
+     `scReaderSendAPDU', `scReaderT1'.
+
+4.3.11 scReaderT1
+-----------------
+
+
+     The `scReaderT1' function is used to send a command using the T=1
+     protocol to the card. The difference to `scReaderT0' is the
+     handling of Case 4 commands.
+
+`int scReaderT1( SC_READER_INFO *RI, SC_CARD_INFO *CI, SC_APDU *APDU );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+
+     APDU
+
+
+     The address of the `SC_APDU' struct. `apud->rsp' must contain
+     enough space for the maximum possible answer length. In case of
+     short commands this is 256 bytes for response data and 2 bytes for
+     the status word.
+
+Remarks
+     This functions is normally not used by the application programmer.
+
+See also
+     `scReaderSendAPDU', `scReaderT0'.
+
+4.3.12 scReaderSendAPDU
+-----------------------
+
+
+     The `scReaderSendAPDU' function is used to send a command to the
+     card.  This command does Case 4 handling even with T=0 by using
+     information from the `SC_CARD_INFO' struct. This is the function
+     normally used to exchange APDUs.
+
+`int scReaderSendAPDU( SC_READER_INFO *RI, SC_CARD_INFO *CI, SC_APDU *APDU );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+
+     APDU
+
+
+     The address of the `SC_APDU' struct. `apud->rsp' must contain
+     enough space for the maximum possible answer length. In case of
+     short commands this is 256 bytes for response data and 2 bytes for
+     the status word.
+
+See also
+     `scReaderT0', `scReaderT1'.
+
+
+File: scez.info,  Node: scSmartcard functions,  Next: scSmartcafe functions,  Prev: scReader functions,  Up: Top
+
+5 scSmartcard functions
+***********************
+
+Here are only these functions described, which are used by application
+programmers.
+
+5.1 Defines
+===========
+
+None.
+
+5.2 Structs
+===========
+
+5.2.1 ATR_VALUE
+---------------
+
+     typedef struct {
+         const BYTE *atr;            /* ATR for card */
+         const BYTE *atrMask;        /* Mask for bytes to ignore */
+         const int atrLength;        /* Length of ATR */
+         const int type;             /* Card type */
+     } ATR_VALUE;
+
+5.3 Functions
+=============
+
+5.3.1 scSmartcardGetCardType
+----------------------------
+
+
+     The `scSmartcardGetCardType' function is used to determine the
+     card type according to the ATR in CI and to initialise this struct
+     by calling `scSmartcardInit' and `scSmartcardGetCardData' or
+     `scSmartcardProcessATR'.
+
+`int scSmartcardGetCardType( SC_CARD_INFO *CI );'
+
+Parameters
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+See also
+     `scSmarcardGetCardTypeExt'.
+
+5.3.2 scSmartcardGetCardTypeExt
+-------------------------------
+
+
+     The `scSmartcardGetCardTypeExt' function is used to determine the
+     card type according to the ATR in CI and to initialise this struct
+     by calling `scSmartcardInit' and `scSmartcardGetCardData' or
+     `scSmartcardProcessATR'.  The difference of this function to
+     `scSmartcardGetCardType' is, that this functions has a second
+     parameter to supply your own table of ATRs.
+
+`int scSmartcardGetCardTypeExt( SC_CARD_INFO *CI, const'
+     ATR_VALUE *ATRTAB );
+
+Parameters
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+
+     ATRTAB
+
+
+     The address of an array of `ATR_VALUE' structs which is NULL
+     terminated.
+
+See also
+     `scSmarcardGetCardType'.
+
+5.3.3 scSmartcardProcessATR
+---------------------------
+
+
+     The `scSmartcardProcessATR' function is used to fill the protocol
+     parameter variables in CI according to the ATR therein.
+
+`int scSmartcardProcessATR( SC_CARD_INFO *CI );'
+
+Parameters
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+5.3.4 scSmartcardSimpleProcessSW
+--------------------------------
+
+
+     The `scSmartcardSimpleProcessSW' function is used to check the
+     status word from the card in a simple way. The return value in
+     STATUS can have the values `SC_SW_OK', `SC_SW_DATA_AVAIL' and
+     `SC_SW_UNKNOWN'. `SC_SW_DATA_AVAIL' can be only return while the
+     card talks T=0. `SC_SW_UNKNOWN' means in most cases, that there
+     was an error. `scSmartcardSimpleProcessSW' does determine the
+     status by CI->SWOK and CI->SWAV, which must be filled before this
+     function is used.
+
+`int scSmartcardSimpleProcessSW( SC_CARD_INFO *CI,'
+     int *STATUS, int *NUMBER );
+
+Parameters
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+
+     STATUS
+
+
+     Contains the status.
+
+
+     NUMBER
+
+
+     If `SC_SW_DATA_AVAIL' is returned, this contains the number of
+     bytes available.
+
+5.3.5 scSmartcardInit
+---------------------
+
+
+     The `scSmartcardInit' function is used to initialise the function
+     pointers in CI. This is done by delegating the call to the Init
+     function from a card module appropriate for the card type in
+     CI->TYPE.
+
+`int scSmartcardInit( SC_CARD_INFO *CI );'
+
+Parameters
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+5.3.6 scSmartcardGetCardData
+----------------------------
+
+
+     The `scSmartcardGetCardData' function is used to to fill CI in a
+     card dependent way. The variables filled are the protocol
+     parameters, CI->SWOK / CI->SWAV and the Get Response command into
+     CI->T0.GETRSP. This is done by calling the function
+     CI->SCGETCARDDATA, which is a pointer to a card specific function.
+     This function pointer can be set by calling `scSmartcardInit'.
+
+`int scSmartcardGetCardData( SC_CARD_INFO *CI );'
+
+Parameters
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+See also
+     `scSmarcardInit'.
+
+
+File: scez.info,  Node: scSmartcafe functions,  Next: Example application source,  Prev: scSmartcard functions,  Up: Top
+
+6 scSmartcafe functions
+***********************
+
+This chapter is given as an example for other card modules. It is not
+typical smart card, but it has few functions. :) This is because
+JavaCards 2.1 do not have file access commands.
+
+6.1 Defines
+===========
+
+     #define SC_SMARTCAFE_MAX_AIDLEN         16
+     #define SC_SMARTCAFE_MAX_KEYLEN         16
+     #define SC_SMARTCAFE_MAX_PINLEN         8
+
+     #define SC_SMARTCAFE_ALGO_NONE          0
+     #define SC_SMARTCAFE_ALGO_DES           1
+     #define SC_SMARTCAFE_ALGO_3DES          2
+
+     #define SC_SMARTCAFE_SPL_SIGN           0x01
+     #define SC_SMARTCAFE_SPL_CRYPT          0x02
+
+     #define SC_SMARTCAFE_SP_INSTALL         0x00
+     #define SC_SMARTCAFE_SP_LOAD            0x01
+     #define SC_SMARTCAFE_SP_DELETE          0x02
+     #define SC_SMARTCAFE_SP_CLEAR           0x03
+     #define SC_SMARTCAFE_SP_PUTKEY          0x04
+     #define SC_SMARTCAFE_SP_SETPIN          0x05
+
+     #define SC_SMARTCAFE_ACCESS_NEV         0x00
+     #define SC_SMARTCAFE_ACCESS_PIN         0x03
+     #define SC_SMARTCAFE_ACCESS_ALW         0xFF
+
+     #define SC_SMARTCAFE_TAG_VERSION        0xC2
+     #define SC_SMARTCAFE_TAG_SERIAL         0xC3
+
+     #define SC_SMARTCAFE_INSTALL_LOAD       0x02
+     #define SC_SMARTCAFE_INSTALL_INST       0x04
+     #define SC_SMARTCAFE_INSTALL_INSTHEAP   0x84
+
+     #define SC_SMARTCAFE_KEYIDX_CRYPT       0x01
+     #define SC_SMARTCAFE_KEYIDX_SIGN        0x02
+
+   These defines are parameters for card commands. They should make it
+easier to use the functions and understand them later.
+
+6.2 Functions
+=============
+
+This describes only the basics of the card commands. For more detailed
+information read the Sm@rtCafe' Manual.
+
+6.2.1 scSmartcafeInit
+---------------------
+
+
+     The `scSmartcafeInit' function is used to initialise the function
+     pointers in CI.
+
+`int scSmartcafeInit( SC_CARD_INFO *CI );'
+
+Parameters
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+Remarks
+     This is normally not used by the application programmer, but called
+     via `scSmartcardInit'.
+
+See also
+     `scSmartcardInit'.
+
+6.2.2 scSmartcafeGetCardData
+----------------------------
+
+
+     The `scSmartcafeGetCardData' function is used to initialise CI. It
+     sets protocol, communication parameters and SWOK / SWAV /
+     T0.GETRSP.
+
+`int scSmartcafeGetCardData( SC_CARD_INFO *CI );'
+
+Parameters
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+Remarks
+     This is normally not used by the application programmer, but called
+     via `scSmartcardGetCardData'.
+
+See also
+     `scSmartcardGetCardData'.
+
+6.2.3 scSmartcafeAuthApplet
+---------------------------
+
+
+     The `scSmartcafeAuthApplet' function is used to calculate MACs for
+     applets or encrypt them.
+
+`int scSmartcafeAuthApplet( BYTE *ENCKEY, BYTE ENCALGO, BYTE *SIGKEY, BYTE SIGALGO, BYTE *DATA, int *DATALEN );'
+
+Parameters
+     ENCKEY
+
+
+     The pointer to the encryption key. This can be `NULL', when the
+     encryption algorithm is `SC_SMARTCAFE_ALGO_NONE'.
+
+
+     ENCALGO
+
+
+     The encryption algorithm. (See Defines.)
+
+
+     SIGKEY
+
+
+     The pointer to the signature key. This can be `NULL', when the
+     signature algorithm is `SC_SMARTCAFE_ALGO_NONE'.
+
+
+     SIGALGO
+
+
+     The signature algorithm. (See Defines.)
+
+
+     DATA
+
+
+     The pointer to the applet to be signed. When the applet is signed,
+     the available space should exceed the applet size by four bytes.
+
+
+     DATALEN
+
+
+     When calling this variable contains the size of the applet. Upon
+     return it contains the size of the processed applet.
+
+Remarks
+     This produces currently wrong results, i.e. it is unusable. If
+     someone knows how to do this correctly, please email me.
+
+See also
+     `scSmartcafeCmdLoadApplet'.
+
+6.2.4 scSmartcafeCmdClearMem
+----------------------------
+
+
+     The `scSmartcafeCmdClearMem' function is used to clear the memory
+     of the card. After a successful return contains CI->SW the status
+     word.
+
+`int scSmartcafeCmdClearMem( SC_READER_INFO *RI, SC_CARD_INFO *CI );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+6.2.5 scSmartcafeCmdCreateML
+----------------------------
+
+
+     The `scSmartcafeCmdCreateML' function is used to create a Master
+     Loader.  After a successful return contains CI->SW the status word.
+
+`int scSmartcafeCmdCreateML( SC_READER_INFO *RI, SC_CARD_INFO *CI, BOOLEAN START, BYTE SPL, BYTE *SP );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+
+     START
+
+
+     If this is `TRUE', the command begins creation of the ML, else it
+     finishes the creation.
+
+
+     SPL
+
+
+     The security definition parameters for loading.
+
+
+     SP
+
+
+     The pointer to the `BYTE' array containing the security parameters
+     for Install, Load Applet, Delete ML, Clear Memory, Put Key and Set
+     PIN.
+
+6.2.6 scSmartcafeCmdDeleteML
+----------------------------
+
+
+     The `scSmartcafeCmdDeleteML' function is used to delete the Master
+     Loader.  After a successful return contains CI->SW the status word.
+
+`int scSmartcafeCmdDeleteML( SC_READER_INFO *RI, SC_CARD_INFO *CI );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+6.2.7 scSmartcafeCmdGetData
+---------------------------
+
+
+     The `scSmartcafeCmdGetData' function is used to get information
+     about the card.  After a successful return contains CI->SW the
+     status word.
+
+`int scSmartcafeCmdGetData( SC_READER_INFO *RI, SC_CARD_INFO *CI, BYTE TAG, BYTE *DATA, int *DATALEN );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+
+     TAG
+
+
+     The tag of the data to fetch. (`0xC2': OS version, `0xC3': card
+     number)
+
+
+     DATA
+
+
+     The address of the response buffer.
+
+
+     DATALEN
+
+
+     This returns the length of the data returned.
+
+6.2.8 scSmartcafeCmdInstall
+---------------------------
+
+
+     The `scSmartcafeCmdInstall' function is used to initialise the
+     loading of an applet or to install an applet.  After a successful
+     return contains CI->SW the status word.
+
+`int scSmartcafeCmdInstall( SC_READER_INFO *RI, SC_CARD_INFO *CIi, BYTE RCP, BYTE SPL, BYTE *AID, BYTE AIDLEN, BYTE *PARAM, BYTE PARAMLEN, WORD HEAP );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+
+     RCP
+
+
+     The reference control parameter.
+
+
+     SPL
+
+
+     The security control parameter.
+
+
+     AID
+
+
+     A pointer to the application ID.
+
+
+     AIDLEN
+
+
+     The length of the application ID.
+
+
+     PARAM
+
+
+     Additional install parameters.
+
+
+     PARAMLEN
+
+
+     The length of the install parameters.
+
+
+     HEAP
+
+
+     The heap size.
+
+6.2.9 scSmartcafeCmdLoadApplet
+------------------------------
+
+
+     The `scSmartcafeCmdLoadApplet' function is used to load the applet
+     bytecode onto the card. The block size has a maximum of 224 bytes
+     and must be a multiple of 32.  After a successful return contains
+     CI->SW the status word.
+
+`int scSmartcafeCmdLoadApplet( SC_READER_INFO *RI, SC_CARD_INFO *CI, BOOLEAN LAST, BYTE BLKNUM, BYTE *DATA, BYTE DATALEN );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+
+     LAST
+
+
+     Set to `TRUE' if the current block is the last block.
+
+
+     BLKNUM
+
+
+     The block number starting at `0'.
+
+
+     DATA
+
+
+     The data of the current block.
+
+
+     DATALEN
+
+
+     The length of the current block.
+
+Remarks
+     The 4 byte MAC is transfered as a separate block.
+
+6.2.10 scSmartcafeCmdPutKey
+---------------------------
+
+
+     The `scSmartcafeCmdPutKey' function is used to set the encryption
+     or signature key.  After a successful return contains CI->SW the
+     status word.
+
+`int scSmartcafeCmdPutKey( SC_READER_INFO *RI, SC_CARD_INFO *CI, BYTE KEYIDX, BYTE *KEY, BYTE KEYLEN );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+
+     KEYIDX
+
+
+     The key index. (`1' for encryption, `2' for MAC)
+
+
+     KEY
+
+
+     The key.
+
+
+     KEYLEN
+
+
+     The length of the key. Use 8 for DES and 16 for 3DES keys.
+
+6.2.11 scSmartcafeCmdSelect
+---------------------------
+
+
+     The `scSmartcafeCmdSelect' function is used to select an applet or
+     the ML using the AID.  After a successful return contains CI->SW
+     the status word.
+
+`int scSmartcafeCmdSelect( SC_READER_INFO *RI, SC_CARD_INFO *CI, BYTE *AID, BYTE AIDLEN, BYTE *RESP, int *RESPLEN );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+
+     AID
+
+
+     The application ID.
+
+
+     AIDLEN
+
+
+     The length of the application ID.
+
+
+     RESP
+
+
+     The pointer to the buffer receiving the FCI.
+
+
+     RESPLEN
+
+
+     The length of the returned FCI.
+
+6.2.12 scSmartcafeCmdSetPIN
+---------------------------
+
+
+     The `scSmartcafeCmdSetPIN' function is used to set the PIN.  After
+     a successful return contains CI->SW the status word.
+
+`int scSmartcafeCmdSetPIN( SC_READER_INFO *RI, SC_CARD_INFO *CI, BYTE *PIN, BYTE PINLEN );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+
+     PIN
+
+
+     The pointer to the PIN.
+
+
+     PINLEN
+
+
+     The length of the PIN.
+
+See also
+     `scSmartcafeCmdVerifyPIN'.
+
+6.2.13 scSmartcafeCmdVerifyPIN
+------------------------------
+
+
+     The `scSmartcafeCmdVerifyPIN' function is used to authenticate the
+     user by verifying the PIN.  After a successful return contains
+     CI->SW the status word.
+
+`int scSmartcafeCmdVerifyPIN( SC_READER_INFO *RI, SC_CARD_INFO *CI, BYTE *PIN, BYTE PINLEN );'
+
+Parameters
+     RI
+
+
+     The address of the `SC_READER_INFO' struct.
+
+
+     CI
+
+
+     The address of the `SC_CARD_INFO' struct.
+
+
+     PIN
+
+
+     The pointer to the PIN.
+
+
+     PINLEN
+
+
+     The length of the PIN.
+
+See also
+     `scSmartcafeCmdSetPIN'.
+
+
+File: scez.info,  Node: Example application source,  Next: Index,  Prev: scSmartcafe functions,  Up: Top
+
+7 Example application source
+****************************
+
+Example application source from chapter 'Example application'.
+
+     #include <scez/scgeneral.h>
+     #include <scez/scsmartcafe.h>
+
+     #ifndef READER_TYPE
+     #define READER_TYPE SC_READER_DUMBMOUSE
+     #endif /* READER_TYPE */
+     #ifndef READER_SLOT
+     #define READER_SLOT 1
+     #endif /* READER_SLOT */
+     #ifndef READER_PORT
+     #define READER_PORT "0"
+     #endif /* READER_PORT */
+
+     int main (int argc, char *argv[] )
+     {
+         SC_READER_INFO *ri;
+         SC_CARD_INFO *ci;
+         SC_READER_CONFIG rc;
+
+         int ret;
+
+         BYTE resp[ SC_GENERAL_SHORT_DATA_SIZE+2 ];
+         int resplen;
+
+         scInit();
+
+         rc.type=READER_TYPE;
+         rc.slot=READER_SLOT;
+         rc.param=READER_PORT;
+
+         scReaderGetConfig( argc, argv, &rc );
+
+         ri = scGeneralNewReader( rc.type, rc.slot );
+
+         ci = scGeneralNewCard( );
+
+         /* Init Reader */
+         scReaderInit( ri, rc.param );
+
+         /* Activate Card */
+         scReaderActivate( ri );
+
+         /* Get Card Status */
+         scReaderCardStatus( ri );
+         if( !(ri->status&SC_CARD_STATUS_PRESENT) ) { /* No card */ }
+
+         /* Reset Card */
+         scReaderResetCard( ri, ci );
+
+         /* Get Card Type */
+         scSmartcardGetCardType( ci );
+         if( (ci->type&0xFFFFFF00)!=SC_CARD_SMARTCAFE ) { /* Wrong card */ }
+
+         ret = scSmartcafeCmdSelect( ri, ci,
+                 (BYTE *) "\xD2\x76\x00\x00\x92\xFF\xFF\xFF", 9,
+                 resp, &resplen );
+         if( (ret!=SC_EXIT_OK) || (ci->sw[0]!=0x90) || (ci->sw[1]!=0x00) )
+         { /* Some error has occured */ }
+
+         scReaderDeactivate( ri );
+
+         scReaderShutdown( ri );
+
+         scGeneralFreeCard( &ci );
+         scGeneralFreeReader( &ri );
+
+         scEnd();
+
+         return( 0 );
+     }
+
+
+File: scez.info,  Node: Index,  Next: (dir),  Prev: Example application source,  Up: Top
+
+Index
+*****
+
+ [index ]
+* Menu:
+
+* APDU case defines:                     scGeneral functions. (line 149)
+* ATR_VALUE:                             scSmartcard functions.
+                                                              (line  20)
+* card modules:                          Overview.            (line  62)
+* Card status defines:                   scGeneral functions. (line 177)
+* Card type defines:                     scGeneral functions. (line  46)
+* Configuration defines:                 scGeneral functions. (line  12)
+* core modules:                          Overview.            (line  12)
+* Data size defines:                     scGeneral functions. (line 185)
+* environment variable:                  scReader functions.  (line  73)
+* example application:                   Example application. (line   6)
+* example application source:            Example application source.
+                                                              (line   6)
+* Keeper:                                scReader functions.  (line  69)
+* overview:                              Overview.            (line   6)
+* Protocol type defines:                 scGeneral functions. (line 163)
+* reader modules:                        Overview.            (line  29)
+* reader support modules:                Overview.            (line  51)
+* Reader type defines:                   scGeneral functions. (line 123)
+* READER_PORT:                           Example application. (line  31)
+* READER_SLOT:                           Example application. (line  28)
+* READER_TYPE:                           Example application. (line  25)
+* SC_APDU:                               scGeneral functions. (line 311)
+* SC_CARD_INFO <1>:                      scGeneral functions. (line 239)
+* SC_CARD_INFO:                          Example application. (line  52)
+* SC_CARD_STATUS_PRESENT:                Example application. (line 103)
+* SC_CRYPT_INFO:                         scGeneral functions. (line 298)
+* SC_READER_CONFIG <1>:                  scReader functions.  (line  92)
+* SC_READER_CONFIG:                      Example application. (line  52)
+* SC_READER_INFO <1>:                    scGeneral functions. (line 201)
+* SC_READER_INFO:                        Example application. (line  52)
+* SC_T0_INFO:                            scGeneral functions. (line 273)
+* SC_T1_INFO:                            scGeneral functions. (line 283)
+* scEnd <1>:                             scGeneral functions. (line 340)
+* scEnd:                                 Example application. (line 148)
+* SCEZ_READER:                           scReader functions.  (line  73)
+* scGeneral:                             scGeneral functions. (line   6)
+* scGeneral defines:                     scGeneral functions. (line   9)
+* scGeneral functions:                   scGeneral functions. (line 322)
+* scGeneral structs:                     scGeneral functions. (line 198)
+* scgeneral.h:                           Example application. (line  16)
+* scGeneralBinHex:                       scGeneral functions. (line 542)
+* scGeneralCleanCI:                      scGeneral functions. (line 524)
+* scGeneralCleanKeys:                    scGeneral functions. (line 506)
+* scGeneralFreeAPDU:                     scGeneral functions. (line 445)
+* scGeneralFreeCard <1>:                 scGeneral functions. (line 412)
+* scGeneralFreeCard:                     Example application. (line 140)
+* scGeneralFreeReader <1>:               scGeneral functions. (line 379)
+* scGeneralFreeReader:                   Example application. (line 140)
+* scGeneralGetRandStr:                   scGeneral functions. (line 484)
+* scGeneralNewAPDU:                      scGeneral functions. (line 430)
+* scGeneralNewCard <1>:                  scGeneral functions. (line 397)
+* scGeneralNewCard:                      Example application. (line  85)
+* scGeneralNewReader <1>:                scGeneral functions. (line 355)
+* scGeneralNewReader:                    Example application. (line  80)
+* scGeneralReverseString:                scGeneral functions. (line 463)
+* scInit <1>:                            scGeneral functions. (line 325)
+* scInit:                                Example application. (line  64)
+* scinternal.h:                          scGeneral functions. (line  13)
+* scReader:                              scReader functions.  (line   6)
+* scReader defines:                      scReader functions.  (line   9)
+* scReader functions:                    scReader functions.  (line  19)
+* scReader structs:                      scReader functions.  (line  14)
+* screader.h:                            Example application. (line  13)
+* scReaderActivate <1>:                  scReader functions.  (line 183)
+* scReaderActivate:                      Example application. (line  98)
+* scReaderCardStatus <1>:                scReader functions.  (line 228)
+* scReaderCardStatus:                    Example application. (line 103)
+* scReaderCheckAPDU:                     scReader functions.  (line 119)
+* scReaderDeactivate <1>:                scReader functions.  (line 206)
+* scReaderDeactivate:                    Example application. (line 135)
+* scReaderExpandPort:                    scReader functions.  (line  22)
+* scReaderGetConfig <1>:                 scReader functions.  (line  46)
+* scReaderGetConfig:                     Example application. (line  76)
+* scReaderInit <1>:                      scReader functions.  (line 140)
+* scReaderInit:                          Example application. (line  98)
+* scReaderResetCard <1>:                 scReader functions.  (line 250)
+* scReaderResetCard:                     Example application. (line 103)
+* scReaderSendAPDU:                      scReader functions.  (line 346)
+* scReaderShutdown <1>:                  scReader functions.  (line 165)
+* scReaderShutdown:                      Example application. (line 135)
+* scReaderT0:                            scReader functions.  (line 271)
+* scReaderT1:                            scReader functions.  (line 309)
+* scSmartcafe:                           scSmartcafe functions.
+                                                              (line   6)
+* scSmartcafe defines:                   scSmartcafe functions.
+                                                              (line  13)
+* scSmartcafe functions:                 scSmartcafe functions.
+                                                              (line  51)
+* scsmartcafe.h:                         Example application. (line  17)
+* scSmartcafeAuthApplet:                 scSmartcafe functions.
+                                                              (line 102)
+* scSmartcafeCmdClearMem:                scSmartcafe functions.
+                                                              (line 158)
+* scSmartcafeCmdCreateML:                scSmartcafe functions.
+                                                              (line 180)
+* scSmartcafeCmdDeleteML:                scSmartcafe functions.
+                                                              (line 222)
+* scSmartcafeCmdGetData:                 scSmartcafe functions.
+                                                              (line 243)
+* scSmartcafeCmdInstall:                 scSmartcafe functions.
+                                                              (line 284)
+* scSmartcafeCmdLoadApplet:              scSmartcafe functions.
+                                                              (line 348)
+* scSmartcafeCmdPutKey:                  scSmartcafe functions.
+                                                              (line 398)
+* scSmartcafeCmdSelect:                  scSmartcafe functions.
+                                                              (line 438)
+* scSmartcafeCmdSetPIN:                  scSmartcafe functions.
+                                                              (line 484)
+* scSmartcafeCmdVerifyPIN:               scSmartcafe functions.
+                                                              (line 520)
+* scSmartcafeGetCardData:                scSmartcafe functions.
+                                                              (line  79)
+* scSmartcafeInit:                       scSmartcafe functions.
+                                                              (line  57)
+* scSmartcard:                           scSmartcard functions.
+                                                              (line   6)
+* scSmartcard defines:                   scSmartcard functions.
+                                                              (line  12)
+* scSmartcard functions:                 scSmartcard functions.
+                                                              (line  30)
+* scSmartcard structs:                   scSmartcard functions.
+                                                              (line  17)
+* scsmartcard.h:                         Example application. (line  13)
+* scSmartcardGetCardData:                scSmartcard functions.
+                                                              (line 150)
+* scSmartcardGetCardType <1>:            scSmartcard functions.
+                                                              (line  33)
+* scSmartcardGetCardType:                Example application. (line 112)
+* scSmartcardGetCardTypeExt:             scSmartcard functions.
+                                                              (line  53)
+* scSmartcardInit:                       scSmartcard functions.
+                                                              (line 133)
+* scSmartcardProcessATR:                 scSmartcard functions.
+                                                              (line  83)
+* scSmartcardSimpleProcessSW:            scSmartcard functions.
+                                                              (line  98)
+
+
+
+Tag Table:
+Node: Top196
+Node: Overview774
+Node: Example application4369
+Node: scGeneral functions9660
+Node: scReader functions26316
+Node: scSmartcard functions34156
+Node: scSmartcafe functions38191
+Node: Example application source48546
+Node: Index50525
+
+End Tag Table

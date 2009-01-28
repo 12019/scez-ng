@@ -1,0 +1,102 @@
+Geldkarten-Files
+================
+
+This file is in German, because the Geldkarte (money card) is only
+used in Germany and the original technical terms are in German.
+
+Im folgenden sind nur die Daten aufgeführt, die sich auslesen lassen
+und interessant sein könnten.
+
+MF (3F00)
+---------
+
+EF_ID (0003) LR (1Rec / 22 Bytes)
+ - kartenherausgebendes Institut (Kurz-BLZ, BCD): 2-4
+ - individuelle Kartennummer (BCD): 5-9
+ - Verfallsdatum (jj mm/BCD): 11-12
+ - Aktivierungsdatum (jj mm tt/BCD): 13-15
+ - Ländercode (BCD): 16-17
+ - Währungskennzeichen (ASCII): 18-20
+ - Wertigkeit (0x01=10E-2, 0x02=10E-1, 0x04=10E0,...): 21
+
+EF_VERSION (0017) LR (1Rec / 8 Bytes)
+ - Hex: 1-8
+
+DF (3F00A200 / AID: D2 76 00 00 25 45 50 01 00)
+-----------------------------------------------
+
+EF_BETRAG (0104, SFI 18) LR (1Rec / 9 Bytes)
+ - aktueller Betrag (BCD): 1-3
+ - Maximalbetrag (BCD): 4-6
+ - maximaler Transaktionsbetrag (BCD): 7-9
+
+EF_BÖRSE (0105, SFI 19) LR (1Rec / 27 Bytes)
+ - Kartentyp (00: kontobezogen, FF: Wertkarte): 1
+ - BLZ Börsenverrechnungskonto (BCD): 2-5
+ - Kontonummer Börsenverrechnungskonto (BCD): 6-10
+
+EF_LSEQ (0106, SFI 1A) LR (1Rec / 2 Bytes)
+ - Anzahl der Ladevorgänge +1 (Binär): 1-2
+
+EF_LBEQ (0107, SFI 1B) LR (1Rec / 2 Bytes)
+ - Anzahl der Buchungen +1 (Binär): 1-2
+
+EF_LLOG (0108, SFI 1C) CR (1-3Rec / 33 Bytes)
+ - Statusbyte (Laden/Entladen, Secure Messaging, etc.): 1
+ - Anzahl der Ladevorgänge (Binär): 2-3
+ - Betrag (BCD): 5-7
+ - Terminal-ID (BCD): 14-21
+ - Terminalsequenznummer (BCD): 22-24
+ - Datum (jjjjmmtt oder 0/BCD): 25-28
+ - Uhrzeit (hhmmss oder 0/BCD): 29-31
+ - Anzahl der Buchungen (Binär): 32-33
+
+EF_BLOG (0109, SFI 1D) CR (1-15Rec / 37 Bytes)
+ - Statusbyte (Abbuchen/Rueckbuchen, Secure Messaging, etc.): 1
+ - Anzahl der Buchungen (Binär): 2-3
+ - Anzahl der Ladevorgänge (Binär): 4-5
+ - Betrag (BCD): 6-8
+ - Händerkartennummer (BCD): 9-18
+ - Händlerkartensequenznummer (Binär): 19-22
+ - Händlerkartensummensequenznummer (Binär): 23-26
+ - Datum (jjjjmmtt oder 0/BCD): 30-33
+ - Uhrzeit (hhmmss oder 0/BCD): 34-36
+
+Beispielausgabe von scdir auf dem Palm Pilot
+--------------------------------------------
+
+Card: Geldkarte
+ATR: 3B EF 00 FF 81 31 50 45 65 63 08 04 13 FF FF FF FF 03 60 02 01 01 31 FC
+Karteninstitut:  224765
+Kartennummer:  8210000227
+Aktivierungsdatum: 06/04/98
+Verfallsdatum: 12/01
+Land: 0280
+Waehrung: DEM
+Betrag: 0000.00
+Max. Betrag: 0400.00
+Max. Transaktion: 0400.00
+Kartentyp: Wertkarte
+Boersenverrechnungskonto:
+  BLZ:          50040000
+  Kontonummer:  0991070401
+Ladevorgaenge: 0
+Abbuchungen: 0
+Lade-/Entladevorgaenge:
+1)
+  Vorgang: Laden
+  Ladevorgang: 0
+  Abbuchungen: 0
+  Betrag: 0000.00
+  Terminal-ID: 0000000000000000
+  Terminal-Sequenznummer: 000000
+Ab-/Rueckbuchungen:
+1)
+  Vorgang: Rueckbuchen
+  Abbuchung: 0
+  Ladevorgaenge: 0
+  Betrag: 0000.00
+  Haendlerkartennummer: 00000000000000000000
+  Haendlersequenznummer: 0
+  Haendlersummensequenznummer: 0
+

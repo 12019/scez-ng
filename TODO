@@ -1,0 +1,11 @@
+
+libdes is in libssl0.9.8, replace -ldes with -lcrypto
+
+Make readers/ and cards/ compile as pre-requisites to scez
+
+In scez compile, extra /.libs/.libs/ for libsio breaks compilation
+
+Why libscez.la not installed in /usr/local/lib ? There's some error with relinking it
+  (make install phase)
+
+make clean delete scez/{cards/readers}/.libs

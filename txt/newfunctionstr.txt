@@ -1,0 +1,112 @@
+#define SC_DRV_FUNC()
+
+#define SC_DRV_VARS(cmdsize); \
+	BYTE cmd[cmdsize], rsp[ SC_GENERAL_SHORT_DATA_SIZE+2 ]; \
+	SC_APDU apdu; \
+	int ret;
+
+#define SC_DRV_PRE(); \
+	ci->sw[0]=0x00; ci->sw[1]=0x00;
+
+#define SC_DRV_INITAPDU(case,cmdlen); \
+	apdu.cse=case; \
+	apdu.cmd=cmd; \
+	apdu.cmdlen=cmdlen; \
+	apdu.rsp=rsp; \
+	apdu.rsplen=0; \
+	memset( cmd, 0, sizeof(cmd) );
+
+#define SC_DRV_SETHEADER(cla,ins,p1,p2); \
+	cmd[0]=cla; \
+	cmd[1]=ins; \
+	cmd[2]=p1; \
+	cmd[3]=p2;
+
+#define SC_DRV_SENDAPDU(); \
+	ret=scReaderSendAPDU( ri, ci, &apdu ); \
+	memset( cmd, 0, sizeof(cmd) ); \
+	if( ret!=SC_EXIT_OK ) return( ret );
+
+#define SC_DRV_PROCSW(); \
+	if( apdu.rsplen<2 ) return( SC_EXIT_BAD_SW ); \
+	ci->sw[0] = apdu.rsp[apdu.rsplen-2]; \
+	ci->sw[1] = apdu.rsp[apdu.rsplen-1]; \
+	apdu.rsplen-=2;
+
+
+Example:
+
+Before (46 lines):
+
+int scCryptoflexCmdRsaSign( SC_READER_INFO *ri, SC_CARD_INFO *ci,
+    BYTE keynum, const BYTE *data, BYTE *resp, int *resplen )
+{
+    BYTE cmd[ 0x86 ];
+    BYTE rsp[ SC_GENERAL_SHORT_DATA_SIZE+2 ];
+    SC_APDU apdu;
+    int ret;
+
+    ci->sw[0]=0x00; ci->sw[1]=0x00;
+
+    apdu.cse=SC_APDU_CASE_4_SHORT;
+    apdu.cmd=cmd;
+    apdu.cmdlen=0x86;
+    apdu.rsp=rsp;
+    apdu.rsplen=0;
+
+    memset( cmd, 0, sizeof(cmd) );
+
+    cmd[0]=0xC0;
+    cmd[1]=0x88;
+    cmd[3]=keynum;
+    cmd[4]=0x80;    /* RSA key length */
+
+    memcpy( cmd+5, data, SC_CRYPTOFLEX_RSA_SIZE );
+
+    ret=scReaderSendAPDU( ri, ci, &apdu );
+    memset( cmd, 0, sizeof(cmd) );
+    if( ret!=SC_EXIT_OK ) return( ret );
+
+    if( apdu.rsplen<2 ) return( SC_EXIT_BAD_SW );
+
+    ci->sw[0] = apdu.rsp[apdu.rsplen-2];
+    ci->sw[1] = apdu.rsp[apdu.rsplen-1];
+
+    apdu.rsplen-=2;
+
+    memcpy( resp, apdu.rsp, apdu.rsplen );
+    *resplen=apdu.rsplen;
+
+    memset( rsp, 0, sizeof(rsp) );
+
+    return( SC_EXIT_OK );
+}
+
+After (25 lines):
+
+int scCryptoflexCmdRsaSign( SC_READER_INFO *ri, SC_CARD_INFO *ci,
+    BYTE keynum, const BYTE *data, BYTE *resp, int *resplen )
+{
+	SC_DRV_VARS( 0x86 );
+
+	SC_DRV_PRE();
+
+	SC_DRV_INITAPDU(SC_APDU_CASE_4_SHORT,0x86);
+
+	SC_DRV_SETHEADER(0xC0,0x88,0x00,keynum);
+
+    cmd[4]=0x80;    /* RSA key length */
+    memcpy( cmd+5, data, SC_CRYPTOFLEX_RSA_SIZE );
+
+	SC_DRV_SENDAPDU();
+
+	SC_DRV_PROCSW();
+
+    memcpy( resp, apdu.rsp, apdu.rsplen );
+    *resplen=apdu.rsplen;
+
+    memset( rsp, 0, sizeof(rsp) );
+
+    return( SC_EXIT_OK );
+}
+

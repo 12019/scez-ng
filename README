@@ -1,0 +1,2841 @@
+$Id: README 1113 2002-08-16 09:36:08Z zwiebeltu $
+
+SCEZ
+====
+
+Introduction:
+-------------
+
+My goal is to write a useful, portable, (relatively) easy to use
+chipcard library. So SCEZ is not very useful as it is, but has
+to be included in other programs. To do this you should be a
+programmer and have at least a bit of an understanding of the
+programming language C. If you ask yourself "What are these .c
+files?" SCEZ is most probably not suited for you.
+
+I have not much experience with programming, so suggestions on
+programming style and library structure are welcome.
+
+Welcome are also all other suggestions, found errors, patches, etc..
+
+Documentation is not up to date, but it should give you some ideas how
+SCEZ is structured.
+
+What I'm especially interested is:
+
+- Documentation about cards and readers, sources for cards and readers
+  in small quantities ("You want what? 10 cards? Ha! Ha! Ha!") and
+  even better free samples of cards and readers.
+
+- Test vectors for 3DES-MAC for the Cryptoflex or other help solving
+  this problem. (If it is solvable.) Also help regarding 3DES decrypting
+  with Internal Authentication is welcome.
+
+	___________
+   |           |
+   | Smartcard |
+   |___________|_____________________
+   |                                 |
+   | Basiccard/Cryptoflex/Cyberflex/ |
+   |  Geldkarte/GPK4000/GSM SIM/MFC/ |
+   |    Multiflex/Proton/STARCOS/    |
+   |         Sm@rtCafe/TCOS          |
+   |_________________________________|__________
+   |     |                                      |
+   | PTS |                Reader                |
+   |_____|______________________________________|
+   |                                            |
+   | ACR20/Blue Dot Connector/CT-API/Dumb Mouse |
+   |     GCR 400/GPR 400/Reflex 60/Towitoko     |
+   |___________                                 |
+   |     |     |                                |
+   | T=0 | T=1 |                                |
+   |_____|_____|                                |
+   |                                            |
+   |____________________________________________|
+   |                     |                      |
+   |         SIO         |    CT-API driver     |
+   |_____________________|______________________|
+
+		A bit simplified structure of SCEZ.
+
+
+Motivation:
+-----------
+
+- To have fun.
+
+- To learn about chipcards.
+
+- To make it easier for other people to learn about chipcards.
+
+- To make information technology more secure. For this reason I release
+  this program with BSDish license. The value of security can only
+  be measured when you don't have security (i.e. how much damage could
+  have been avoided, if you had security). This can't be shown, when
+  you decide to do the investments in security. Buy making this so cheap
+  I hope to help making the decision in favor of security.
+
+- To make security technology more transparent. Security firms are still
+  very reluctant in releasing information about their products, which
+  have IMO no know how. They do it in the name of security. When I see
+  this, I ask myself "How insecure is their product, when the secrecy
+  of this information is relevant for security?". So I won't recommend
+  products, where the manufacturer has this information policy. This
+  attitude of the security has to change.
+
+Chipcard security:
+------------------
+
+All cards can be broken, so put no more secrets on a card than are
+really necessary and try to design you application, so that when
+one card is broken not all other cards are compromised.
+
+What I won't ever put on a card are unencrypted secret/private
+keys for encryption of storage or communication data. When the card
+is broken they will get all your data! Signature keys on cards are
+acceptable, because they can be revoked.
+
+Installation:
+-------------
+
+Download:
+
+http://www.franken.de/crypt/scez.html
+ftp://ftp.franken.de/pub/crypt/chipcards/scez/
+
+Unix/Palm:
+
+1) Unpack
+2) Adjust Makefile to select reader for test applications and to set
+   some parameters.
+3) "make" and choose your system.
+4) "make <system>"
+
+MS Windows:
+
+1) Unpack
+2) Adjust Makefile.vc5 to select reader for test applications and to set
+   some parameters.
+3) "nmake -f Makefile.vc5" and choose your system.
+
+or something like that. If something gives an error, because include
+"pa.h" can't be found, just remove this line.
+
+Before compiling the test programs make sure they have the correct keys
+set.
+
+If you want to reduce the size of the library, here the dependencies of
+the object files:
+
+All depend on scgeneral, screader, scsmartcard.
+scmultiflex depends on sccryptoflex.
+scacr20 depends on sct0, sio(light).
+scdumbmouse, sctowitoko depend on scpts, sct0, sct1, sio(light).
+screflex60 depends on sct0, sct1, sio(light).
+
+So some possible combinations are:
+
+Library for SIMMan with only CT-API driver: scgeneral, screader, scsmartcard,
+scctapi, scgsmsim.
+Library for a Geldkarte application Palm Pilot with only Dumb Mouse driver:
+scgeneral, screader, scsmartcard, scpts, sct0, sct1, sio(light), scdumbmouse,
+scgeldkarte.
+
+In this case don't forget to set the correct defines in scgeneral.h.
+
+New (at least in august 2000) is the public CVS access to SCEZ.  Use
+
+    cvs -d:pserver:cvs@cvs.gnumonks.org:/cvsroot login
+
+to login with the password "cvs". To download the sources run
+
+    cvs -z6 -d:pserver:cvs@cvs.gnumonks.org:/cvsroot checkout -P scez
+
+It is also possible to access it by http:
+
+    http://www.gnumonks.org/cgi-bin/cvsweb.cgi/scez/
+
+If you want to help developing SCEZ, you can get a CVS login. SCEZ
+is currently coded with tabstop size of 4 and indentation only with tabs.
+You're free to choose youre tabstop size (I don't see it. :) ), but
+please use only tabs and no spaces for indentation.
+
+To make mandatory locking work correctly under Linux you have to do
+following two things:
+
+  1) Mount the filesystem with the device on it with the option "mand".
+
+  2) Set the setgid-bit while not setting the group exec bit.
+
+
+Files:
+------
+
+- sc* are the card library source files.
+- sio.* slog.* is SIO written by Tim Hudson.
+- t* are the source files for the library test programs.
+- bcupload loads applications onto a BasicCard and changes the run state.
+- cafeman loads applets onto a SmartCafe card.
+- cardcheck will be an automagic card analysing programm.
+- cfupload can be used to load files on Cyberflex cards.
+- crdetect detects the supported card readers installed.
+- cyflexman loads applets onto a Cyberflex card.
+- flexpasswd changes the master key of a Multiflex/Cryptoflex.
+- gendivkey is a simple program to generate a diversified key.
+- getcert reads the certificates from a Telesec SigG key card.
+- scanclains scans for valid CLA/INS combinations.
+- scdir prints interesting data about the card in the reader.
+- scsh is used like a shell and sends APDUs to a smart card.
+- scwait waits for the insertion of a Cyberflex card.
+- simdump reads and writes the phone book of a GSM SIM card.
+- simman reads and writes the phone book, language settings and SMSes of
+  a GSM SIM card.
+
+Many of these programs call scReaderGetConfig to get the reader
+configuration. See the comment above scReaderGetConfig in screader.c
+to get more information about the mechanism.
+
+Supported Hardware/Software:
+----------------------------
+
+- Cards:
+  - BasicCard: Support is discontinued. (Don't forget to load the images
+    in bc/test/ for testing with tbasiccard. USE ONLY A VIRGIN ENHANCED
+    BASICCARD!)
+  - Cryptoflex
+  - Cyberflex Access
+  - Geldkarte: Only few commands.
+  - GPK4000-s(p): Mostly tested.
+  - GPK8000: A bit tested. Uses the GPK4000 driver.
+  - GSM SIM: Partly tested (see tgsmsim and simman).
+  - MFC: Untested and no SM.
+  - Multiflex: Tested with 3K and 8K (mask 80 and 95). Uses many Cryptoflex
+    commands.
+  - Proton: Only few commands.
+  - Quick: Only a bit.
+  - Sm@rtCafe
+  - STARCOS: TODO.
+  - TCOS: Tested with Telesec SigG card and NetKey card.
+- Operating systems:
+  - Linux: Used as development platform.
+  - FreeBSD: Tested an older version with FreeBSD 2.2.7.
+  - Alpha OSF/1: Works with Towitoko Chipdrive, but not with Dumb Mouse.
+  - HP HP-UX: Untested.
+  - SGI IRIX: Untested.
+  - Sun Solaris: Somebody compiled an earlier version.
+  - MS-Windows: Ported with Visual C++ 5. The only reliable reader driver
+    is CT-API. All others appear to work now, but test it more, before
+    you use it for anything important! Compiles with Visual C++ 6.
+  - Unix: All other unices untested. I'll look if the non-commercial
+    Unixware license allows development of software with BSD-style
+    license and where I get enough hard disk space for it.
+  - PalmOS: Supports Towitoko reader and at least on my Palm III with
+    direct chip programming the Dumb Mouse. The library is built with
+    gcc (prc-tools 0.5.0, pilrc 2.4) as a GLib shared library. Cards
+    with inverse convention do not work.
+- Readers:
+  - ACR20/Cybermouse: Only serial model. Has some bugs. Dunno if it
+    will ever work correctly. See entry from 1999/12/31. To summarize
+    it: Shake well and good luck.
+  - Blue Dot Connector: "card reader" for Java iButtons. Not very much
+    tested.
+  - CT-API: Compiled and tested under Linux, FreeBSD and MS-Windows.
+  - Dumb Mouse: JP2 and JP5 are set. Schematics are at
+    http://cuba.xs4all.nl/hip/dumbmouse.html. Should also work with
+    UniProg and MAKInterface, but both untested.
+  - GCR 400: Tested with GCR 410.
+  - GPR 400: Working with T=0.
+  - Reflex 60: Tested with Reflex64.
+  - Towitoko: Tested with Chipdrive micro and extern I.
+
+Limitations:
+------------
+
+- CT-API: Not thread safe.
+- Dumb Mouse: Detection if card is present doesn't work with UniProg on
+  all operating systems, because SIO does no support DCD by default.
+- General: scGeneralGetRandStr returns *NOT* true random numbers!
+- DES: libdes from Eric Young, cryptlib 2.1beta or newer from Peter
+  Gutmann or OpenSSL is required for some commands.
+- Multiflex: TESA7 not supported (Use Scotch tape.).
+- Readers: No control of Vpp.
+
+Untested:
+---------
+
+- CT-API: CT-BCS (scCtapiBcs*).
+- Cryptoflex: LoadCert, VerifyPubKey and VerifyData only checked, but
+  not tested with a card.
+- Cyberflex: A few Java related commands.
+- Dumb Mouse: UniProg, MAKInterface.
+- GPK4000: All public key commands are untested. SetCardStatus is only
+  checked. (see tgpk4000)
+- GSM SIM: Many.
+- T=1: Some S-Blocks, transmission errors and CRC.
+- TCOS: Update Binary, Update Record and Manage Security Environment.
+  (see ttcos)
+
+Bugs and problems:
+------------------
+
+- ACR20: Does not working correctly with T=0 cards. Maybe another
+  bug in this reader.
+- Cryptoflex: 3DES does not work with PRO commands. Also Update
+  Enciphered appears to use DES even with a 3DES key. So maybe PRO
+  commands really don't support 3DES. Also after encrypting and
+  decrypting with DesCrypt with DES results in the start string,
+  but not with 3DES.
+- Cryptoflex: RSA Sign and RSA Key Gen need to much power to work
+  on a Dumb Mouse powered only by a serial port.
+- GPK4000: Needs to much power to work with a Dumb Mouse powered
+  only by a serial port.
+- Towitoko: Sometimes scTowotokoInit returns an IO error.
+  Call then Shutdown and Init again. Maybe the reader has to few
+  electrons at the beginning. I don't have this problem since I put
+  a batterie at it. Maybe a little rest between raising DTR/CTS
+  and type detection or a batterie would help.
+- Towitoko: E.g. in tmultiflex the second reset doesn't work.
+  Removing and reinserting the card was the only way to make this
+  second reset work again. Don't ask me why.
+- Towitoko: Problems with T=1, when the transmitting I-Blocks do not
+  fit entirely into one Send Data sequence.
+
+
+TODO:
+-----
+
+- ACR20: Do better check of SW from reader.
+- CardOS: Get documentation.
+- const static UpdateDocumentation
+- CT-API: Call direct access functions from encapsulate functions
+- CT-API: Detect available ports?
+- CT-API: Library name should be suppliable with param.
+- CT-API: Return more informative exit codes than SC_EXIT_UNKNOWN_ERROR.
+- CT-API: Support for different reader types at the same time.
+- CT-API: Wipe arrays.
+- CT-API: Wrapper for own drivers.
+- Dox: Links to card documentation into TeXInfo file and onto homepage.
+- Driver: Development of a driver description language, which should
+  make it easer to generate a card driver.
+- Dumb Mouse: TC1=0xFF?
+- Find something nice and Y2k-proof.
+- Full test suite
+- General: Split scgeneral.h into sc.h and scgeneral.h.
+- GPK4000: CLA for Init Hashed.
+- GPK4000: EEPROM unit handling in tgpk4000.
+- GSM SIM: Get second value in GetCap from TA1.
+- Multiflex: Check of Increase/Decrease Stamped
+- Oscar: Get one.
+- PalmOS: Split scdir into applications for Geldkarte, Bradesco, GSM SIM,
+  etc..
+- Scdir: Detect DIR(PKCS15).
+- Scdir: Read EF(DIR) and print AIDs.
+- Smartcard: More flexible ATR matching.
+- Smartcard: Write common commands (ISO7816 and CEN726).
+- STARCOS: Do everything.
+- PKCS#15: Implement card independent functions which are required
+  for an implementation of PKCS#11/PKCS#15.
+- Quick: Find out more about it.
+- Specifying included modules at compile time.
+- Support for other Cards.
+- Support for other Readers.
+- Support for GPK2000, MPCOS-EMV, OSCAR.
+- T=0,T=1: Make support optional.
+- TCOS: Write utility program for SigG and NetKey card.
+- Windows: Test it more and with more compilers.
+
+Things to be donner better:
+---------------------------
+
+- Insert SC_CARD_INFO into SC_READER_INFO.
+- Insert void pointer into SC_READER_INFO for the data needed by the reader.
+- Working only with APDU may make the command case info optional.
+- Supplying NAD for T=1 needed in reader drivers.
+- Use ExchangeBlock instead of WriteBuffer/ReadBuffer.
+- Device library (like SIO but without serial line handling)
+
+Sources for Cards and Reader:
+-----------------------------
+
+- ACS
+
+  URL: http://www.acs.com.hk
+  Comment: Did not reply to emails sent directly. Did reply to emails
+    sent via Zeitcontrol, but did nowhere try to answer the questions.
+    There is no good documentation available, the support is non-existent,
+    the reader has a problem with Le=0 and sends reproducible malformed
+    responses, so I can dissuade from buying a ACR20 either directly from
+    ACS or indirectly from Zeitcontrol.
+  Readers: Cybermouse/ACR20
+
+- Aladdin Knowledge Systems
+
+  URL: http://www.aladdin.de (They are also in other countries.)
+  Comment: Ordering there was not perfect, but like a walk through a
+    blooming meadow on a sunny day in may without hay fever compared to
+    Schlumberger. Maybe they don't sell the cards anymore which would
+    be very bad.
+  Cards: Multiflex 8K (called CC3), Cryptoflex (called CC4)
+
+- Deutsche Telekom / Telesec
+
+  URL: http://www.telekom.de, http://www.telesec.de
+  Comment: The NetKey card and the readers are in the Deutsche Telekom
+    Katalog. Got so far only a description of the software interface of
+    the B1 card readers, which is based on the CT-API interface. Mail for
+    more detailed information about the hardware interface was until now
+    not answered, which is a pity, because the B1 Pro would be a nice
+    card reader with PIN pad and display. And it is not discontinued.
+    Talked with Telesec support line. New documentation is not available.
+    They will contact me, when it is available. Meanwhile I'm waiting for
+    the B1 Pro to arrive. I ordered it on 2000/01/12. Let's see, if I
+    receive it until the end of the year. It did arrive on 2000/04/19!
+    This reader was manufactured by Kobil.
+  Cards: German signature law (SigG) compliant PKS-Card and the NetKey card.
+  Readers: Kobil Kaan (with Telesec label) and B1 card readers.
+
+- Epsilon
+
+  URL: http://www.eps.no
+  Comment: Not ordered something, yet. First response came very fast,
+    response to second email never.
+  Cards: Memory and microprocessor cards from Gemplus, also contactless.
+  Readers: Readers from Gemplus.
+
+- Gemplus
+
+  URL: http://store.gemplus.com
+  Comment: Sells only to the USA and Canada.
+  Cards: Some Gemplus cards.
+  Readers: Some.
+
+- Giesecke & Devrient
+
+  URL: http://www.gdm.de
+  Comment: Maybe you can buy cards in small quantities there.
+  Cards: STARCOS.
+  Readers: Mostly robust readers for (public) commercial use.
+
+- Integra
+
+  URL: mailto:integra.stuttgart@integra.e-mail.com
+  Comment: This is the German distributor of Gemplus stuff. They are very
+    helpful.
+  Cards: Gemplus Cards
+  Readers: Gemplus Readers
+
+- Intertex
+
+  URL: www.intertex.se
+  Comment: Documetation online available. Good service.
+  Readers: PCMCIA and serial
+
+- Kobil
+
+  URL: http://www.kobil.de
+  Comment: Interface for their pocket reader is proprietary and
+    secret. Their other readers have the Telekom B1 interface, which
+    Kobil didn't want to or couldn't supply me with details. So my
+    advice is to avoid Kobil. The B1 readers are the same Deutsche
+    Telekom sells, but more expensive.
+  Readers: Kobil Kaan and some B1 readers.
+
+- SBS
+
+  URL: http://www.sbs.net
+  Comment: German distributor of Intertex readers. Friendly service.
+  Readers: Intertex IX2 and others
+
+- Schlumberger
+
+  URL: http://www.slb.com
+  Comment: Ordering the first time was an odyssey. I had no problems
+    with my second order.
+  Cards: Pay-, Multi-, Crypto-, Cyberflex
+  Documentation:
+    Cryptoflex: http://www.cryptoflex.slb.com/Support/support.html
+    Cyberflex: http://www.cyberflex.slb.com/Support/support.html
+    Multiflex: Visit the Schlumberger Smart Card Marketplace
+      https://www.cardstore.slb.com/ , to download a free copy of the
+      Multiflex Reference Manual. When you go to the store, select
+      either of the card pages(1-99 or bulk), and then select any
+      Multiflex card entry. The manual link will be on the resulting
+      product "detail" page.
+  Readers: Reflex card readers.
+
+- Towitoko
+
+  URL: http://www.towitoko.com, http://www.towitoko.de
+  Comment: The Chipdrive micro is cheap and you get what you pay for.
+    Documentation is bad. There is also a cheaper source for their
+    card readers in the US, but I have the URL currently at one of
+    my other computers.
+  Cards: SLE4428, SLE4442, I2C
+  Readers: Chipdrive
+
+- Zeitcontrol
+
+  URL: www.basiccard.com, www.cybermouse.de, www.zeitcontrol.de
+  Comment: Their cards are the cheapest smart cards I know of. Manual
+    is on their web server. Ordering there was fine. About Cybermouse, see
+    my comment above in the ACS entry.
+  Cards: BasicCards
+  Readers: Chipi, ACS Cybermouse/ACR20
+
+Misc:
+-----
+
+* Mailing list: I have installed a mailing list at home about SCEZ.
+Currently it is more of an announcement mailing list, but discussions
+and questions are welcome. To subscribe send a mail with the message body
+"subscribe" (BODY! NOT SUBJECT!) to scez-request@mbsks.franken.de. The
+mails for the mailing list go to scez@mbsks.franken.de.
+
+* Provide the maximum possible space for response data when you know
+not for certain, that the card does not respond with more data. Some
+cards do not honor fully the Le byte, e.g. the BasicCard with encrypted
+transmission. For this reason I have removed the limitation to Le response
+bytes from my T=1 implementation.
+
+* If you killed, i.e. locked yourself out, a Multiflex 3K, get the chip
+module out. It is embedded only in transparent resin and nice to look at
+under a microscope. You can verify that it is a Motorola 68HC05SC21.
+
+* SIM adapters (ID-000->ID-1): Take an empty phone card or some killed
+smart card. Take your SIM card and the frame where you have broken it
+out. Draw with the help of this the lines on the soon to be adapter
+around the edges of the SIM card. Get a good knife and cut at the inside
+of the lines. Now make in the middle of this, where the chip was,
+a hole with the knife and cut from here to the corners of the line
+marks. Break the triangles out. Try out, if your SIM card fits in there.
+If not cut with the knife a little at the whole away until it fits
+just in. Now fasten some stripes of adhesive tape from the back of the
+card over the opening. Then fasten a stripe of tape over the opening
+from the front. Cut with a sharp knife ad the edge of the opening the
+front tape (and only the front tape) and press it to the back tape. Now
+remove the rest of the front tape. And ready is the adapter card. At
+least I make it this way.
+
+* For the Palm Pilot I use the HotSync cable and following cable/plug
+between it and the Towitoko/DumbMouse reader. This adapter is not
+symmetrical. So mark the sides so that you know where to connect the
+Palm and where the reader.
+
+Palm side    Reader side  For readers
+9pin, male   9pin, male
+
+2  (RD) <-> 3  (RD)       All
+3  (TD) <-> 2  (TD)       All
+5  (SG) <-> 5  (SG)       All
+6 (DSR) <-> 4 (DTR)       All
+7 (RTS) <-> 6 (DSR)       Dumb Mouse, to PIN 1 (DCD) for UniProg
+8 (CTS) <-> 7 (RTS)       All
+
+For modem cables (not tested):
+
+Palm side    Reader side
+25pin,male?  9pin, male
+
+2   (RD) <-> 3  (RD)
+3   (TD) <-> 2  (TD)
+4  (CTS) <-> 7 (RTS)
+5  (RTS) <-> 6 (DSR)
+7   (SG) <-> 5  (SG)
+20 (DSR) <-> 4 (DTR)
+
+* Reader functions may change with the support of more reader types, e.g.
+for readers with keypad.
+
+* There is a project to write a PC/SC framework for Unix called MUSCLE
+(http://www.linuxnet.com/smartcard/).
+
+* The command documentation of OSCAR cards is online available, although
+OSCAR is a bit strange (http://www.gis.co.uk/products/oscar/index.htm).
+
+Copyright:
+----------
+
+Following files are Copyright (C) 1997 Tim Hudson (tjh@cryptsoft.com)
+(See COPYRIGHT.sio.):
+
+platform.h sio.c sio.h sio.html slog.c slog.h varadic.h
+
+Rest of the files are Copyright (C) 1999,2000 by Matthias Bruestle
+(m@mbsks.franken.de) (See COPYRIGHT.).
+
+Thanks to:
+----------
+
+- Bodo Bellut: For the Geldkarte and his testing of the Chipdrive.
+- Matthias Gaertner: For his help with the Dumb Mouse.
+- Peter Gutmann: For the GPK4000's, various code fragments and his help.
+- Marco Hofmann and Giesecke&Devrient: For the donation of a STARCOS Toolkit
+  with each two STARCOS S2.1 and SPK2.1 cards and a card reader and for the
+  SmartCafe cards.
+- Uwe Horn: For Testing with UniProg.
+- Tim Hudson: For writing SIO and releasing it under a BSD style license.
+- Christian Kahlo: For some cards.
+- Eric A. Young: For libdes and releasing it under a BSD style license.
+
+Changes:
+--------
+
+1999/02/01
+
+- Began work on SCEZ.
+
+1999/02/25
+
+- Multiflex,Cryptoflex: BYTE *fid -> WORD fid
+- Multiflex,Cryptoflex: scReaderT0 -> scReaderSendAPDU
+- tmultiflex: updated
+
+1999/02/26
+
+- Multiflex,Cryptoflex: IntAuth checks correctness of response.
+- tcryptoflex,tmultiflex,tsmartcard,ttowitoko,tctapi: updated
+- Geldkarte: Very basic support.
+- Scdir: Included Geldkarte.
+- Moved wwt and getrsp from SC_CARD_INFO to SC_T0_INFO and updated
+  all necessary files.
+
+1999/02/27
+
+- Multiflex,Cryptoflex: Fixed bug with response.
+
+1999/02/28
+
+- GPK4000: Adding useful defines.
+- Ate four Gniedla.
+
+1999/03/01
+
+- GPK4000: scReaderT0 -> scReaderSendAPDU
+
+1999/03/02
+
+- GPK4000: Beginning checking commands and implementing Crycks commands.
+
+1999/03/05
+
+- Smartcard: Included ATRs for Payflex.
+
+1999/03/07
+
+- Ate three Gniedla.
+
+1999/03/09
+
+- Multiflex: Why does Int Auth not work with the CC3 from Aladdin? Fsck!
+- Cryptoflex: Tried out 3DES retail MAC. Without success. Fsck!
+- README,scdir,u_change,u_serial,u_write: Updated.
+- General: Included defines for TCOS cards.
+
+1999/03/10
+
+- TCOS: Ordered Telesec SigG card.
+
+1999/03/11
+
+- Making first distribution.
+
+1999/03/12
+
+- General: Included defines for BasicCard.
+- Smartcard: Included ATR for BasicCard.
+
+1999/03/16
+
+- Multiflex: Call scCryptoflexCreateRecordMAC
+
+1999/03/17
+
+- Basiccard: Updated ATR. Can distinguish now between Compact and Enhanced.
+- Cryptoflex,GPK4000,Multiflex: SW set to 0 at beginning of command.
+- Cryptoflex: Updated Key Enciphered with 3DES.
+- Multiflex: CC3 (Mask 95) has Full DES Int Auth, so it requires P1=0x01
+  to be "normal" IntAuth.
+- Multiflex: DesCrypt.
+- Smartcard: Separate ATR for CC3.
+
+1999/03/18
+
+- Smartcard: Added ATR for Cryptoflex 8K.
+- Moved BYTE sw[2] to SC_CARD_INFO.
+
+1999/03/19
+
+- GPK4000: Implementing Crycks and encrypted commands and first
+  checking pass done.
+
+1999/03/24
+
+- Dumb Mouse: Reset working.
+
+1999/03/25
+
+- T0,Reader,Towitoko,Dumb Mouse: Reorganization. Moved T=0 implementation
+  to sct0.c and did [Read|Write][Buffer|Char] for Towitoko and Dumb Mouse.
+- Dumb Mouse: T=0 is working. Wrote tdumbmouse. Default configuration is
+  with jumper at Active High Reset.
+- GPK4000: SelectFk tested.
+
+1999/03/27
+
+- Scdir: For Multiflex and Cryptoflex with Directory.
+- t0,Towitoko,Dumb Mouse: Inversion is now done in the readerspecific
+  read/write functions.
+- Dumb Mouse: SetSpeed.
+- GPK4000: Converted function names into abrevated command names from
+  GPK4000 reference manual.
+
+1999/03/28
+
+- Dumb Mouse: Set etu.
+- GPK4000: CrtDirCrycks CLA corrected. Challenge removed for Crycks commands.
+- Dumb Mouse: Dumb Mouse/UniProg auto detection.
+
+1999/03/29
+
+- Dumb Mouse: CardStatus does work with Dumb Mouse.
+
+1999/03/30
+
+- Dumb Mouse: Bug in GetTS removed.
+- Smartcard: GetCardType with BasicCards tested.
+
+1999/04/03
+
+- T=1: Implemented.
+- Geldkarte: Debugged Select.
+
+1999/04/04
+
+- T=1: Debugged.
+- BasicCard: Commands implemented and partly tested.
+- BasicCard: Killed a card with EEPROM CRC with data from EEPROM SIZE.
+  Returned after a reset not the ATR, but the last response from
+  EEPROM CRC: 00 00 02 6A 00 68. Maybe it got too less power, but
+  why did it then have enough power to write to the EEPROM?  Also the
+  voltage would have to drop from 4.8V to below 2.7V. Should sometimes
+  look at it with an oscilloscope.
+
+1999/04/05
+
+- Ate three Gniedla.
+- BasicCard: tbasiccard.c written.
+- BasicCard: Communication encryption routines (DES and 3DES) written.
+- BasicCard: Added SG-LFSR algorithm.
+
+1999/04/06
+
+- BasicCard: bcupload for uploading image files generated with zcbasic.
+- T=1: Chaining to ICC didn't work, because the content of each packet
+  did start at the beginning of the block.
+- BasicCard: Length of response data is more then Le. Removed limitation
+  in T=1 implementation. Is IMO a violation of ISO7816-4 5.3.
+- BasicCard: tbasiccard tests all commands and DES/3DES encryption.
+
+1999/04/07
+
+- T=1: Changed ABORT handling. Added checksum error counter.
+
+1999/04/08
+
+- T=1: Changed ABORT handling to the old method.
+- General: GetRandStr. This function does *NOT* return true random
+  numbers. It is only done with time() and rand().
+- BasicCard: bcupload modified.
+- BasicCard: Encryption with LFSR/LFSR-CRC implemented. Tested with
+  the examples in the BasicCard manual.
+- BasicCard: tbasiccard updated for LFSR/LFSR-CRC.
+
+1999/04/09
+
+- GPK4000: CrtDirCrycks works!
+- BasicCard: (See 1999/04/04) The reason is, that a BasicCard can be
+  damaged if a EEPROM CRC or EEPROM CLEAR is executed and it was never
+  an image uploaded.
+
+1999/04/10
+
+- Smartcard: ATRs for GPK4000-sdo, TELESEC card.
+- BasicCard: tbasiccard: Get Application ID also at RUN State.
+
+1999/04/11
+
+- GPK4000: Fixed some bugs and added commands to tgpk4000.
+
+1999/04/12
+
+- Cryptoflex: Put RsaSign into tcryptoflex. tcfkeygen for key generation
+  test because of long key generation time (around 4 minutes).
+  Need some big integer library to test the rest of the RSA commands.
+- Cryptoflex: RsaSign and RsaKeyGen need to much power for my Dumb Mouse.
+  Probably the other RSA commands too.
+- Towitoko: Added a sleep before first communication with the reader to
+  give it some time to save some electrons.
+- Cryptoflex: GetChall with variable challenge size.
+
+1999/04/13
+
+- Cryptoflex: Added UpdateEnc and DesCrypt to tcryptoflex.
+- GPK4000: Checked would be commands of payment and public key commands.
+- General: Exit code for locked.
+
+1999/04/14
+
+- GPK4000: Tested payment commands. (see tgpk4000)
+
+1999/04/15
+
+- Compiled with Borland C++ 4.5.
+- T=0: Reissuing command with new Le after 6CXX.
+- T=0: Check return of CardStatus.
+- T=1: Removed argument blocklen from GetN.
+- T=1: Argument ifsd in ChangeIFSD was not used.
+- GPK4000: Removed check for BYTE var > 256.
+- Multiflex: ExtAuth/IntAuth with #ifdef WITH_DES.
+- Multiflex: Stamped now St because of 32 character limit of Borland C++ 4.5.
+- Multiflex: No return of GenerateAuth.
+- Towitoko: Return b in ReadChar if inverse.
+- Scdir: break after default.
+
+1999/04/16
+
+- Smartcard: Checks TCK of ATR.
+- CT-API: CHAR to unsigned char.
+- General: Changed defines.
+- T=1: Check return of scReaderCardStatus.
+- Towitoko: Include dos.h for sleep.
+- CT-API: SCARD_LIBNAME -> SC_CTAPI_LIB.
+- bcupload and scdir compiled and tested successfully with Borland C++ 4.5.
+
+1999/04/18
+
+- Multiflex: Borland C++ 4.5's 32 character limit can be expanded, but
+  there are certainly other compilers with 32 character limit so I leave
+  the Stamped abrevated.
+- FreeBSD: Compiled and tested a bit under FreeBSD 2.something.
+  Sometimes problems and sometimes not with Towitoko and/or Dumb Mouse.
+  Is SIO the problem?
+
+1999/04/23
+
+- Multiflex,Cryptoflex: flexpasswd program to change transport key.
+- Multiflex,Cryptoflex: gendivkey generates with a masterkey and the
+  card serial number a diversified card key by encryption with DES.
+- General: Removed SC_DIR defines.
+- Removed spaces before #.... .
+
+1999/04/28
+
+- Makefile,scctapi.h,scdumbmouse.h: Modified for __linux__, __FreeBSD__,
+  sun.
+- Makefile: $(READER) again in CFLAGS.
+
+1999/05/03
+
+- TCOS: Got Telesec SigG card.
+
+1999/05/04
+
+- TCOS: Beginning implementing support for Telesec card.
+
+1999/05/06
+
+- Cryptoflex: Wait time and Get Response moved into RsaKeyGen.
+- Scdir: Added AID list.
+- TCOS: ttcos tests commands (nearly) as far as it is possible with
+  the Telesec SigG card.
+- TCOS: Wrote getcert to extract the certificates from the card.
+
+1999/05/19
+
+- Set des_check_key to 0 before des_setkey to make Cryptlib working.
+
+1999/05/21
+
+- Reader: Fixed FreeBSD ifdef in Ports.
+- Reader: Added else section to Ports.
+- SIO: Fixed setup of tv_sec/tv_usec in SIO_WaitForData. FreeBSD
+  works now.
+- CT-API: Debugging, i.e. mostly debugging of the towitoko CT-API driver
+  for Unix.
+  + Does not distinguish between reset of IFD and reset of ICC.
+  + Reset does not work properly.
+  + Get Status does not distinguish between status of IFD and ICC.
+  + TCK isn't returned.
+  + tmultiflex gives after a few commands an ERR_TRANS and after
+  that ERR_CT.
+- CT-API: Full path is needed for loading lib in FreeBSD.
+- CT-API: Underscore is needed before function names in FreeBSD.
+- CT-API: Empty functions for systems which can not load librarys
+  dynamically at runtime.
+
+1999/05/23
+
+- Changed defines for cryptlib.
+- General: Added scInit and scEnd.
+- General: Initialization of cryptlib in scInit and scEnd.
+
+1999/05/24
+
+- Makefile: Changed, so that SIO from cryptlib is used when available.
+- Dumb Mouse: DCD is not used with cryptlib.
+- General: Initialization of of cryptlib in scInit and scEnd is
+  commented out, because else SIO doesn't work properly. Why?
+- General: Use sio.h from cryptlib if compiled with cryptlib.
+
+1999/05/25
+
+- Cleaned up includes, so programs which use SCEZ have to only
+  include the needed includes and the includes be where the programmer
+  wants. Although no file is included automagically if it is required
+  by an include.
+- T=1: Returns at most 256+2 bytes, even if RESPECTS_LE is not set.
+- Makefile: Some cleanup.
+
+1999/05/26
+
+- DES: Fixed bugs in t* when compiled without DES.
+- CT-API: Tested with the Towitoko driver under Windows.
+- CT-API: Fixed bugs in scCtapiCardStatus, scCtapiT0 and
+  scCtapiT1 which haven't shown with the Linux driver.
+- Included rename script, which converts filenames to 8.3.
+- BasicCard: Added extended EC demo application.
+
+1999/05/27
+
+- OpenSSL: Added defines and tested.
+- GPK4000: kats/kpts -> ci.crypt.key
+- GPK4000: !success -> SC_EXIT_BAD_CHECKSUM
+- Cryptoflex: !success -> SC_EXIT_BAD_CHECKSUM
+- Multiflex: !success -> SC_EXIT_BAD_CHECKSUM
+- Smartcard: Removed common commands. They have to be redone for
+  ISO7816-4 and CEN726.
+- Adjusted t* to changes in scgpk4000, sccryptoflex, scmultiflex,
+  scsmartcard.
+
+1999/05/28
+
+- CT-API: Removed UNDERSCORE.
+
+1999/05/30
+
+- PKCS#15: Beginning with PKCS#15. Trying to find a good function structure
+  which is simple, flexible and fully card independent. Not easy.
+
+1999/07/24
+
+- Got a GPK4000-sdo.
+
+1999/08/05
+
+- Changing function names. (SC_Xxxxx_Yyyy -> scXxxxxYyyy)
+- cr -> ri
+- Reorganizing main card and reader functions with function pointers.
+- PKCS#15: Deleted.
+
+1999/08/06
+
+- Changing function names. (SC_Xxxxx_Yyyy -> scXxxxxYyyy)
+- Alpha port.
+- BOOLEAN motor and pinpad in SC_READER_INFO.
+- General: scGeneralCleanCI cleans keys and protocol parameters.
+- Reader,specific drivers: scGeneralCleanCI after reset.
+
+1999/08/07
+
+- Reorganized Makefile.
+- Got two Bradesco Moeda Eletronica.
+- smartcard: Added GPK4000-sdo to scSmartcardInit.
+- Scdir: Added GPK4000-sdo
+- GPK4000: Added support for Bradesco card.
+
+1999/08/08
+
+- Scdir: Added Bradesco card.
+
+1999/08/12
+
+- PalmOS: Got Palm Pilot III.
+
+1999/08/16
+
+- PalmOS: Compiled the necessary des files.
+- PalmOS: Compiled SCEZ.
+
+1999/08/17
+
+- PalmOS: Wrote SIO.
+
+1999/08/22
+
+- PalmOS: SIO should work now.
+
+1999/08/24
+
+- Towitoko,Dumbmouse: si=NULL after SIO_Close.
+- PalmOS: Writing scdir.
+
+1999/08/25
+
+- Towitoko: sleep(1)->sleep(2) for PalmOS before accessing reader.
+- Towitoko: Clean up serial port if an error occurs in scTowtitokoInit.
+- PalmOS: scdir works now.
+
+1999/08/26
+
+- Dumbmouse,Towitoko: while(SIO_ReadChar) -> SIO_Flush for PalmOS.
+
+1999/08/27
+
+- PalmOS: scdir: Menu, Alerts, disabling of update Button, other small
+  changes.
+
+1999/08/28
+
+- PalmOS: SCEZ with GPK4000 support.
+- PalmOS: scdir: With GPK4000 support.
+- PalmOS: scdir: Expanded Menu.
+- PalmOS: scdir: Made function from printarray define, which reduced
+  size very much.
+- gpk4000: tgpk4000 works now without DES.
+- PalmOS: SIO_Log2DB function. Although a bit flaky.
+
+1999/08/29
+
+- PalmOS: Functions which use arrays larger than 15 bytes which are
+  filled at declaration don't work. GCC does fill these with with bcopy.
+  Compiler or libc bug?
+- PalmOS: Rewrite larger arrays after declaration.
+- PalmOS: scdir: Some more resources.
+- smartcard: Changed ATR mask for Geldkarte.
+- PalmOS: scdir: Added scrollbar.
+
+1999/08/30
+
+- Happy Birthday! (You know, if you are meant. Even if you don't want to
+  know it.)
+
+1999/08/31
+
+- Mailed Kobil for reader documentation. Let's see, what they respond.
+- bcupload: scSmartcardGetCardData -> scBasiccardGetCardData because
+  of new SCEZ organization with function pointers.
+- dox: Added a little documentation about the Moeda Eletronica Bradesco.
+
+1999/09/02
+
+- PalmOS: sio: Added control of RTS and CTS.
+- PalmOS: sio: Remove term_state from SIO_INFO.
+- PalmOS: Added scdumbmouse.o to SCEZmain.prc
+
+1999/09/04
+
+- PalmOS: Split SCEZmain into SCEZmain and SCEZreader.
+- PalmOS: sio: Debug RTS/CTS handling. Dumbmouse works now.
+- README: Converted to new naming convention.
+- README: Entry for Kobil.
+
+1999/09/05
+
+- README: Added schematics for Palm modem cable adapter.
+- PalmOS: scdir: Changed menus.
+- PalmOS: scdir: Changed field size.
+- PalmOS: scdir: Reader type selectable by menu.
+
+1999/09/16
+
+- Cryptoflex: #include <stdlib.h> for Visual C++.
+- GPK4000: & 0xFF
+- Smartcard: #include <memory.h> for Visual C++.
+- T1: #include <memory.h> for Visual C++.
+- TCOS: & 0xFF
+- Towitoko: #include <stdlib.h> for Visual C++.
+- Towitoko: n,offset,read -> LONG
+
+1999/09/17
+
+- Scdir: Added Geldkarte.
+- PalmOS: scdir: Added Geldkarte.
+
+1999/09/19
+
+- PalmOS: scdir: Fixes some bugs in printfs.
+- PalmOS: Switched to pilotSSLeay-2.01 because it is testet and to
+  save space when used also by other applications.
+
+1999/09/27
+
+- GSM: Got a card.
+- Dumb Mouse,Towitoko: Fixed some bugs regarding inverse convention.
+- General: SC_CARD_GSM_SIM
+- Smartcard: Single string for SIM card detection. More sophisticated
+  method would be nice.
+
+1999/09/28
+
+- Cryptoflex,Geldkarte,GPK4000,Multiflex: sizeof for correct length of
+  swok/swav in scGeldkarteGetCardData.
+- Geldkarte: More sane returns in GetChall.
+- GSM SIM: Writing functions.
+- Geldkarte: Response for SelectFile was to long.
+
+1999/09/29
+
+- Bradesco: Cleaned up tbradesco.
+- GSM SIM: Writing tgsmsim.
+- General: SC_CARD_GSM_SIM -> SC_CARD_GSMSIM
+- Smartcard: Entry in scSmartcardInit for GSM SIM.
+
+1999/09/30
+
+- GSM SIM: Bytes added to swok.
+- Towitoko: Fixed parity bug in ResetCard. Works now with inverse convention.
+
+1999/10/01
+
+- Removed ProcessSW. I think it is not so useful.
+- Scdir: Added GSM SIM card.
+- Smartcard: Added some more GSM SIM ATRs which are not very specific.
+
+1999/10/02
+
+- GSM SIM: Fetch/GetResp read bytes to read from sw.
+- GPK4000: ifdefed unused variables, when compiling without DES.
+- GSM SIM: Removed 0x92 from swok.
+- Dumb Mouse,Towitoko: SetSpeed changed.
+- Dumb Mouse,Towitoko: Check ri->si before execution of functions.
+- Dumb Mouse,Towitoko: Shutdown in Init, when a port is already open.
+- PalmOS: scdir: Added entry for GSM SIM card.
+- General: Card and reader capability structs.
+
+1999/10/03
+
+- BasicCard,Cryptoflex,GPK4000,GSM SIM,Multiflex,TCOS: GetCap added.
+
+1999/10/04
+
+- Scdir: Removed nibbleswap of SIM ICCID.
+- PTS: Started.
+- Bradesco: Included and cleaned up tbradesco.c.
+
+1999/10/05
+
+- General: Changed SC_CARD_CAP. f and d now in one array. Added the same
+  array to SC_READER_CAP. This is to make it easier to find a match.
+- BasicCard,Cryptoflex,GPK4000,GSM SIM,Multiflex,TCOS: Updated for above
+  change.
+- PalmSIO: Cleaned up.
+- PTS: When no characters are received SC_EXIT_TIMEOUT.
+- Cryptoflex,Multiflex: Added SetFD.
+
+1999/10/06
+
+- General: New/FreeReader/CardCap
+- General: t0.d and t0.wi in SC_CARD_INFO and necessary changes in Smartcard.
+- GSM SIM: Added SetFD.
+- Cryptoflex: The Reference Manual is correct, the "Technical Highlights" not.
+  It does not support PTS.
+- TCOS: Added SetFD.
+- TCOS: The Telesec SigG card is strange. It works only with 9600bps. It
+  reacts not to PTS requests and does not work with 38400bps as advertised
+  in TA1.
+- GPK4000: Added SetFD.
+- Bradesco: SwtSpd works not correctly. Maybe it needs other parameters.
+- Palm: Added scpts.o to Makefile.palm.
+
+1999/10/07
+
+- Faster transmission speed does not improve the overall speed much,
+  e.g. tmultiflex runs 19.3s with 9600bps and 17.3s with 38400bps.
+- Updated rename. 
+- PTS: memcmp of received bytes.
+- cryptlib: Wonders happen. SCEZ works now with cryptlib.
+- Makefile: Programs which require DES will not be compiled, if
+  compiled without a DES library.
+- Makefile: PalmSIO moved to the root directory.
+
+1999/10/11
+
+- PKCS#15: Added pkcs15/p15cryptoflex.txt with suggestions about
+  PKCS#15 General Interface and some implementation details for the
+  Schlumberger Cryptoflex. Suggestions welcome.
+
+1999/10/13
+
+- README: Added some URLs.
+
+1999/10/14
+
+- PKCS#15: Updated p15cryptoflex.txt.
+- Added #error for missing including scgeneral.h to include files.
+
+1999/10/16
+
+- PKCS#15: Changed P15_INFO.
+- PKCS#15: Added p15cryptoflex.c/h.
+- Set UID/GID of files to 0/0.
+- README: Nice ASCII picture of SCEZ structure.
+- T=0: Fixed a possible buffer overflow with a hostile or buggy card.
+- T=0,T=1: Reduced array sizes to really needed size.
+- Dumb Mouse,Towitoko: Check ATR length.
+- Basiccard,Cryptoflex,Geldkarte,GPK4000,GSM SIM,Multiflex,TCOS: Wipe
+  command and response arrays and key schedules after usage.
+- Put tabs where tabs should be.
+- GPK4000: Use SC_GENERAL_SHORT_DATA_SIZE.
+- T=0,T=1: Wipe arrays.
+- Dumb Mouse,Towitoko: Wipe arrays.
+
+1999/10/17
+
+- PKCS#15/Cryptoflex: GetPaths. BER processing is not so easy, at least
+  at the moment for me.
+- Cryptlib: Included -I.. in Makefile and changed the include of
+  ../crypt/des.h to crypt/des.h
+
+1999/10/18
+
+- Dumb Mouse: tdumbmouse would be in an endless loop, if opening of
+  port was not successful.
+- Makefile: Modified for libpkcs15.
+- PKCS#15/General: Included structures into p15general.h.
+- PKCS#15/Cryptoflex: p15cryptoflex.c compiles.
+- Scdir: DIR file for Cryptoflex and Multiflex.
+
+1999/10/19
+
+- Scdir: Removed second scReaderInit.
+
+1999/10/20
+
+- General: In scgeneral.h __WINDOWS__ -> WINDOWS.
+- Cryptoflex,Towitoko: Included windows.h and changed sleep to Sleep
+  for Windows.
+
+1999/10/21
+
+- Dumbmouse,PTS,T=1,Towitoko: Modified include path of sio.h for cryptlib.
+- PKCS#15/Cryptoflex: Wrote tp15cryptoflex.
+- Makefile: Added tp15cryptoflex.
+- Makefile: Changed Libpath for cryptlib.
+
+1999/10/22
+
+- PKCS#15/Cryptoflex: Debugged p15CryptoflexGetPaths.
+
+1999/10/23
+
+- PKCS#15/Cryptoflex: p15CryptoflexGetPaths fills unspecified file paths.
+- PKCS#15/Cryptoflex: p15CryptoflexWriteEfDir.
+- Killed a Multiflex 8K. Fsck! Has now 168 bytes more space, believes
+  to have 255 EFs and denies any file creation or deletion, but
+  EF_ExtAuth and EF_Serial are still there. Don't know, how this happened.
+  Chipcards are an expensive hobby. The decision to use a Multiflex 8K
+  for the first testing of the PKCS#15 functions was correct. If you buy
+  cards, buy 10 pieces if possible or at least 5 pieces.
+- General: Wrote scGeneralBinHex for some reader drivers, e.g. GCR 400.
+- T=1: SIO_WaitForData -> SIO_Delay, which is correct.
+
+1999/10/24
+
+- GCR 400: Wrote driver. Hopefully I'll have sometime a GCR 400 to
+  test the driver. Some parts of the documentation are not really clear
+  to me.
+
+1999/10/27
+
+- Scdir: Added AID of the German health card and the RID of Wolfgang Rankl.
+
+1999/10/29
+
+- Sent application for a RID.
+
+1999/10/30
+
+- Basiccard: Be careful with the test image for the Enhanced Basiccard.
+  It made two of my cards unusable. Either it is a bug in bcupload, but
+  oder applications work, or it is a bug in the compiler or Basiccard.
+  The symptom of a unusable card is the response 0x6581 to all commands.
+  Maybe this only happens, when the image is loaded on a card, which had
+  already another application with commands loaded. I just don't want
+  to risk my last usable Enhanced Basiccard. I'll order the next days
+  new cards. Programming with chipcards makes you a serial killer.
+
+1999/10/31
+
+- Ordered BasicCards, also the new ZC2.4 with 16kB EEPROM, and a Cybermouse.
+
+1999/11/01
+
+- ECCard: It is probably not possible to write an application, where the
+  EC-160 private key is only encrypted in the EEPROM. The application needs
+  42 bytes free RAM for the Public variables and I found no way to get this
+  free while having still the full EC-160 functionality. Also I don't know
+  what the EC-160 and SHA-1 libraries and the communication routines do
+  write to the EEPROM. So we do have to wait longer to get the first
+  smart card which does asymmetric algorithm calculations and stores the
+  private key encrypted. It is for this reason removed from the SCEZ
+  distribution.
+- ACR20: Wrote driver.
+- TCOS: Changed SC_CARD_TELESEC to SC_CARD_TCOS_SIGG and added
+  SC_CARD_TCOS_NETKEY.
+- GCR 400: Fixed some bugs.
+- General: Added maxc and maxr to SC_READER_INFO.
+
+1999/11/03
+
+- Got RID: D2 76 00 00 92.
+
+1999/11/04
+
+- Changed SC_CARD_* defines for major minor to high/low byte.
+- Basiccard: Changed application ID.
+
+1999/11/11
+
+- Got serial Zeitcontrol Cybermouse(==ACS Cybermouse==ACS ACR20S) and some
+  BasicCards.
+- Removed memory card "support" from Towitoko Chipdrive driver, because
+  it is brain damaged. See http://homepages.teuto.net/flavour/chip_faq.txt
+- ACR20: Renamed cybermouse to acr20.
+- ACR20: Added tacr20.
+- Reader: Included ACR20 include.
+- General: Debugged scGeneralBinHex.
+- ACR20: Most functions work.
+
+1999/11/12
+
+- ACR20: Added support for extended length.
+- ACR20: All functions should work now as I understand the documentation,
+  but the communication with the cards doesn't work properly. I'll reread
+  the Cybermouse documentation and hope to find the error.
+
+1999/11/13
+
+- ACR20: Works now. See comment above function scAcr20T.
+- Basiccard: SG-LFSR/DES/3DES is always case 4, when not EndEncr.
+- Basiccard: Le of GetApplId is 0x0F, to get SG-LFSR with the ACR20 going.
+- T=0: Strip Le-Byte in scT0SendAPDU only if present.
+- GPK4000: SelFil is case 2 if parent is selecte.
+
+1999/11/15
+
+- T=0: scT0SendAPDU is now more flexible with sending T=0 TPDUs like
+  APDUs.
+
+1999/11/18
+
+- ACR20: haridas@acs.com.hk: "The ACS Proprietary Driver uses Le=0 for
+  "no expected bytes". We can't change this for compatibility reasons."
+
+1999/12/04
+
+- Smartcard: Added ATR for GSM SIM card.
+
+1999/12/07
+
+- Smartcard: Added ATRs for GSM SIM cards and Dutch money cards.
+- General: Added SC_CARDs for Dutch money cards.
+- RPM: Wrote spec file for RPM building.
+- Palm: Added Libc.prc.
+- Palm: Moved pilotSSLeay into the directory palm.
+- README: Added entry for ACS and updated other entries.
+
+1999/12/08
+
+- Smartcard: Added ATRs for two GSM SIM cards.
+- CRDetect: Added crdetect. This program tries to detect ACR20S, Dumb Mouse
+  and Chipdrive on COM1-4.
+
+1999/12/25
+
+- Scdir: Outputs now more data about GSM SIM cards.
+
+1999/12/26
+
+- Scsh: Wrote a simple Smart Card Shell.
+- SIO: Merged PalmSIO and SIO into a SIOLight which has only the functionality
+  that SCEZ uses and misses logging.
+
+1999/12/27
+
+- Simdump: Added Simdump from Gerd Rausch <gerd@alf.gun.de>. Thanks.
+
+1999/12/28
+
+- crdetect: sleep->Sleep and windows.h for MS Windows.
+- Makefile: Wrote Makefile.vc5 for MS Visual C++ 5.0.
+- DES: Added VC++5 compiled libdes.
+- Makefile: Changed unix makefile for SIOLight.
+- Palm: Changed makefile for SIOLight and removed PalmSIO.
+- Palm: Changed makefile for onepass.
+- Palm/scdir: SC_CARD_TELESEC -> SC_CARD_TCOS_SIGG.
+- Removed not needed #includes.
+- Removed PalmSIO, rename and Borland C++ 3.1 project files.
+- crdetect: scDumbmouseDetect tries a reset of the card.
+- README: Entry for mailing list.
+- crdetect: Added CT-API.
+- Serial ports begin now at 0. (0=COM1, 1=COM2, ...) This is because it
+  doesn't look good, if crdetect detects to different card readers at the
+  same port number.
+- Palm: Added GSM SIM.
+- crdetect: Less verbose output.
+- crdetect: The unix towitoko driver does "successfully" reset an ACR20S
+  reader. Change a bit the probabilities.
+- I'll do more with VC++5 this evening, but it will show in the "release"
+  of tomorrow.
+
+1999/12/29
+
+- crdetect: Hangs on a port used by an old gpm(?).
+- CT-API: #include <windows.h>
+- simdump: #include <windows.h>. getpass is not available under MS
+  Windows. Needs replacement.
+- crdetect: Hangs with original Towitoko CT-API driver at ports where no
+  reader is. Also the reader at COM2 is accessible at port 0 and 2. Maybe
+  port 0 is the default reader. Access to COM2 is blocked, when shortly
+  before the CT-API driver is used.
+- crdetect: Added some CT-API library names.
+- crdetect: Many other unix CT-API drivers give false positives with only
+  Reset CT. Probably they do nothing at Reset CT. So I added Get Status ICC.
+  With this I get no false positives with the unix CT-API drivers. Changed
+  probability.
+- crdetect: Added the library path "/usr/lib" for FreeBSD. Other possible
+  locations?
+- Makefile.vc5: Added /D__WIN32__.
+- scsh: Did activate instead of deactivate.
+- General: Added SC_READER_CONFIG struct.
+- Reader: Added scReaderGetConfig. Evaluates the environment.
+- All mains with "int argc, char *argv[]".
+- All programs with scReaderGetConfig.
+- Reader: scReaderGetConfig evaluates the program arguments.
+- scdir: Commented out argument handling, because it needs to be redone
+  with getopt.
+
+1999/12/30
+
+- Windows/SIO: Rounded timedelays up and fixed a bug (at least it makes
+  now sense).  First tests have shown no errors anymore. So it appears
+  it works now. Further tests will show.
+
+1999/12/31
+
+- Reader: Ports were skewed by one if there was no special translation.
+- Windows/SIO: It works better than before, but it still has transmission
+  errors.
+- GPK4000: Checksum checking of RdBinCrycks and RdRecCrycks didn't work,
+  because cmd was cleard before calculating Crycks.
+- ACR20: Running card tests:
+
+  tbasiccard: Ok
+  tbradesco: scGpk4000CmdSelFil(Parent): Error (malformed packet from reader)
+  tcryptoflex: scCryptoflexCmdRsaSign: Error (power?)
+  scdir with Geldkarte: Ok
+  tgpk4000: Ok.
+  tgsmsim: Ok (Error with inverse convention)
+  tmultiflex: Ok
+  
+  Not bad for this reader.
+
+2000/01/02
+
+- Dumb Mouse: Added minor type DEJAN for dumb readers which have no line
+  to detect if a card is inserted.
+- simman: Beginning parsing and reading routines.
+
+2000/01/03
+
+- simman: Parsing, reading and writing routines done and "sand box" debugged.
+  Writing needs testing with real writing, but I don't want to use my
+  mothers card for this.
+- scdir: Changed sequence of ICCID presentation.
+
+2000/01/04
+
+- GSM SIM: scGsmsimPackStr and scGsmsimUnpackStr written.
+
+2000/01/05
+
+- simman: Added and tested dump_sms.
+- simman: Accepts all GSM and Unknown cards.
+- simman: Read EFiccid to test if it is a GSM card.
+- simparse: Ignore lines in section SMS.
+- simman: Built SMS struct.
+
+2000/01/06
+
+- simparse: Parsing routines for SMS written.
+- RPM: Added simman.
+- simman: restore_sms written.
+- simman: dump_sms missed '+' in phone numbers.
+- simman: dump_sms added 7bit packed phone numbers.
+- GSM SIM: scGsmsimUnpackStr needs only character length.
+- simparse: Improved parsing if data contained : or (.
+- simparse: Accept invalid SMS phone numbers.
+
+2000/01/08
+
+- crdetect: Added code, which works probably with a Kobil/Siemens/Telesec
+  B1 card reader. (The TCrypt from Telesec sends 00 C0 00 C0 to the reader.
+  This is a S(Resynch)-block. If the protocol is like T=1, the response
+  should be 00 E0 00 E0.)
+
+2000/01/09
+
+- Palm/scdir: Remove pilotSSL from Makefile.
+- palmsio.h -> siolight.h.
+- T=1: Added some stuff for B1 reader.
+- T=1: Changed ns, nr, ifsc, ifsd and rc to BYTE.
+- Reader: Added T=1 struct to READER_INFO.
+- T=1: Chooses T=1 struct from reader or card depending on reader.
+- T=1: SIO_WaitForData -> scReaderWaitForData.
+- Reader: Added scReaderWaitForData.
+- Dumb Mouse: Added scDumbmouseWaitForData.
+- Towitoko: Added scTowitokoWaitForData.
+- Smartcard: Modified ATR for BasicCard 2.4.
+- PTS: SIO_WaitForData -> scReaderWaitForData.
+- Reader: Added scReaderDelay to make it independent from SIO. This is
+  useful, if no serial reader is used, but e.g. an USB or keyboard
+  reader.
+- Windows/SIO: Fixed a bug in doSleep.
+- Windows/SIO: After adding 15ms to every timeout multiple test runs of
+  tbasiccard, tgsmsim and tmultiflex on the Dumb Mouse and a few test
+  runs on the Towitoko did show no error. 10ms did show occasional
+  errors, maybe every 50-100 commands.
+
+2000/01/10
+
+- Reader: scReaderGetConfig recognizes also lowercase reader name in
+  environment variable and program argument.
+- GSM SIM: Got old card for testing. Thanks!
+- Smartcard: Added ATR for e-plus card.
+- simman: Call scSmartcardProcessATR for unknown card.
+- simman: Set other card parameters if unknown.
+- simman: Language dump corrected.
+- GSM SIM: Functions for character translation. (OK, the do not more than
+  a table lookup, but e.g. on the Palm, applications can not access
+  "global" variables in "shared" libraries.)
+- simman: Character translation for phone book.
+- Towitoko: Added new type for Chipdrive Micro.
+- Smartcard: Removed nonspecific GSM SIM ATRs.
+- simman: restore_phone translated to many characters.
+- simman: Clearing EFsms writes full records.
+- simparse: Fixed parse error which occurred, if there was only a phone
+  number as parameter for a SMS.
+- simman: MR was one to low on newly created SMSes.
+- simparse: Recognizes parameter "unsent".
+- simparse: BINARY did not work.
+- simman: Outputs DCS in case it is unrecognized.
+- simman: Corrected VP handling.
+- GSM SIM: 'ä' was translated wrong with iso2gsm.
+- simman: Rejects PIN shorter 4 and longer 8 before they are sent to the
+  card.
+- simman: EFadm/EFsms records only cleaned, when necessary.
+
+2000/01/12
+
+- README: Added manufacturing guide for a sim adapter card.
+- General: Added type for STARCOS cards from G&D.
+- Smartcard: Added type for STARCOS 2.1 card.
+- README: Updated a bit.
+- TCOS: Ordered two cards.
+- B1: Ordered a B1 Pro from Deutsche Telekom.
+
+2000/01/15
+
+- Makefile: Removes simman executable.
+- RPM: Added libdes-4.01.spec.
+- RPM: Reversed chronological order of changelog.
+- TCOS: Got NetKey cards.
+
+2000/01/16
+
+- TCOS: Added ATR for NetKey card.
+- scdir: Does not work properly for Geldkarte, but I have no Geldkarte
+  which was used, so I can debug it.
+- simman: Also empty record, when status==0xFF.
+
+2000/01/17
+
+- simman: Automagic MR handling removed, because the cellular does it.
+  (At least the C25 does is.)
+- simman: C25 does not send automagically unsent SMSes.
+
+2000/01/29
+
+- simman: Added simman.txt.
+
+2000/01/30
+
+- scdir: Interprets AID in EF(DIR) of a TCOS card.
+
+2000/02/01
+
+- Cyberflex: Ordered 10 Cyberflex Access Augmented Crypto cards and
+  a Reflex 64 card reader.
+
+2000/02/02
+
+- First date with only even digits since 888/8/28.
+- General: Added defines for Cyberflex Access Crypto and Augmented Crypto.
+- Smartcard: Added ATR for Cyberflex Access Crypto and Augmented Crypto.
+
+2000/02/04
+
+- Bradesco: Added scGpk4000SelPK to tbradesco.
+- Cyberflex: "FedEx" wanted probably deliver the cards today, but nobody
+  was at home.
+- TCOS: Added dox/netkey.txt which contains the file structure of the
+  Telesec NetKey card.
+
+2000/02/05
+
+- General: Added variable cla to SC_CARD_INFO.
+
+2000/02/06
+
+- Cryptoflex: cmd[4]=0 for scCryptoflexCmdDirectory.
+- Cyberflex: Added "Service Provider".
+
+2000/02/07
+
+- Cyberflex: Received Cyberflex Access Augmented Crypto cards.
+- Payflex: Received MicroPayflex cards.
+- Reflex64: Received Reflex 64.
+- Smartcard: Added ATR for MicroPayflex.
+- Smartcard: Corrected ATR length for Payflex 4k.
+- Dumb Mouse: Initial Waiting Time correctly set.
+- Towitoko: Initial Waiting Time correctly set.
+- T=1: Returns, when the fourth R-Block in sequence is received.
+- Cyberflex: Began tcyberflex.
+- Scdir: Added name for Cyberflex Access and MicroPayflex.
+- Cyberflex: A bit debugging.
+
+2000/02/08
+
+- Cyberflex: More tcyberflex and more debugging.
+- Cyberflex: Dunno what size to choose for creating a cyclic file.
+- crdetect: Added Towitoko reader type 0x64.
+
+2000/02/09
+
+- CT-API: Some drivers do reset the ICC and return the ATR when they
+  only should reset the IFD. Adapted scCtapiInit.
+- CT-API: Argh! Get Status of a free CT-API driver returns only a
+  single byte and no status word. Did I already say, that I hate these
+  free "CT-API" drivers?
+
+2000/02/11
+
+- Cyberflex: The record length of a cyclic file is 4 bytes longer than
+  the data you can access. So the minimum record length for creating
+  is 5 bytes.
+- General: Added BOOLEAN display to SC_READER_INFO.
+- CT-API,Dumb Mouse,GCR400,Towitoko: Set display and pinpad in Init.
+- General: Added type for Reflex 60 series card readers.
+- Reflex60: Began driver.
+- Reflex60: Began treflex60.
+
+2000/02/12
+
+- Reflex60: Finished treflex60.
+- Reflex60: Finished driver and debugged. T=1 support missing. It seams
+  that the reader exchanges only the blocks supplied, but why does it then
+  need to know the EDC?
+- scdir/Geldkarte: Try Select A200 if Select AID does fail.
+- crdetect: Added scReflex60Detect.
+- crdetect: Fixed bug in scCtapiDetect.
+- The library itself has over 20000 lines.
+
+2000/02/13
+
+- CT-API: Added cttest, which tests CT-API/CT-BCS compliance of libraries.
+- Dox: Added timings.txt.
+
+2000/02/19
+
+- scdir: Added atrSTable to identify unsupported cards.
+- Smartcard: Added ATR for D2 CallYa GSM supplied by Heiko Stamer.
+
+2000/02/20
+
+- Reflex60: Wrote scReflex60WriteBuffer, scReflex60ReadBuffer,
+  scReflex60ReadChar, scReflex60WaitForData.
+- Reflex60: Uses now sct1 to communicate with T=1 cards.
+- Fixed GetConfig call in programs.
+- Reflex60: Seting Read Timeout removed.
+
+2000/02/22
+
+- Cyberflex: Changed Status defines.
+- Cyberflex: Added define SC_CYBERFLEX_STATUS_INCREASE. (Thanks for
+  this most informative manual. NOT!)
+- General: ri->scGetCap=NULL in NewReader.
+
+2000/02/26
+
+- Was at the CeBIT. Very interesting. I got lent a Proton card.
+
+2000/02/27
+
+- Towitoko: Changed CS in the LED command to 0xB4. Thanks Lukasz.
+
+2000/02/28
+
+- Smartcard: Added scSmartcardGetCardTypeExt.
+- Smartcard: Changed processing ATR at the end of scSmartcardGetCardType*.
+
+2000/02/29
+
+- scdir: Fixed bug, which cause the program to loop endlessly with a Geldkarte.
+- Proton: Added.
+- Smartcard: Added Proton ATR.
+- scdir: Outputs further information about Proton cards.
+
+2000/03/01
+
+- General: Added define for Multiflex 4k.
+- Smartcard: Added new ATRs for Multiflex 4k and 8k.
+
+2000/03/02
+
+- PAM: Added SCEZ PAM module with support for Multiflex and Geldkarte.
+- README: Added links to Cryptoflex/Cyberflex/Multiflex documentation.
+- PAM: Added PAM card init program with support for Multiflex.
+
+2000/03/05
+
+- Reflex60: Set Readtimeout to 100000us, because of some communication problems
+  with scpaminit.
+
+2000/03/06
+
+- Reader: Removed getopt support from scReaderGetConfig.
+- PAM: Added getopt support to scpaminit.
+
+2000/03/07
+
+- PAM: Removed from scez distribution and packed separately.
+
+2000/03/08
+
+- Makefile: Builds now shared libraries for Linux. To run the programs
+  directly from the source directory without installing the libraries,
+  you need to set LD_LIBRARY_PATH accordingly.
+- flexpasswd: Getopted.
+- flexpasswd: Added Cyberflex Access.
+- flexpasswd: Added Int Auth for Cryptoflex/Multiflex.
+- scdir: Added verbose output for Cyberflex.
+
+2000/03/09
+
+- cyflexman: Wrote this to manage applets.
+- RPM: Install include files.
+- Makefile: Added entry for building RPM.
+
+2000/03/10
+
+- Cyberflex: Defines for ACL flags.
+- General: scGeneralGetRandStr returns status. Calls changed in pam_scez.c
+  and scbasiccard.c.
+
+2000/03/11
+
+- General: Added function pointer scVerifyPIN to SC_READER_INFO.
+- Reader: Added function scReaderVerifyPIN.
+- Reader: Added defines for PIN coding.
+- Reflex60: Added function scReflex60VerifyPIN.
+
+2000/03/15
+
+- Reader: Fixed bug in scReaderGetConfig.
+- Towitoko: Set CWT to at least the CWT of the Chipdrive.
+- Towitoko: Removed delay in SendData.
+- Towitoko: Set maximum command size for sending data to 255.
+- Geldkarte/Towitoko: This combination works now MUCH better.
+- Payflex: Added first hack for driver. Will not be compiled into the
+  library by default.
+- scdir: Added basic support for Payflex.
+
+2000/03/18
+
+- getcert: Modified to read certs from NetKey card, too.
+
+2000/03/19
+
+- scdir: Card type was wrong with Cyberflex Access cards. Thanks Christian.
+- Towitoko: Longer pause after initialization when defined
+  TOWITOKO_LOW_POWER.
+
+2000/03/20
+
+- GPK4000: scGpk4000CmdGetChal -> scGpk4000CmdGetChall.
+- scanclains: Added.
+- General,Reader,T=0,T=1: Added callback function for waiting time
+  extension requests from the card.
+- Towitoko: Longer pause after card activation when defined TOWITOKO_LOW_POWER.
+  Pause after initialization changed back to normal.
+
+2000/03/21
+
+- cyflexman: Is only compiled, when DES is available.
+- OSF1: Inserted some breaks after default.
+- OSF1: Compiles cleanly, but can't reset card in Dumb Mouse.
+
+2000/03/24
+
+- SIO: Changed ifdefs for OSF1.
+- Makefile: Changed OSF1 entries.
+- General: LONG for OSF1 defined as unsigned int.
+- Makefile: Looks if ranlib exists.
+- Makefile: Added IRIX entries.
+- Makefile: Added HP-UX entries.
+
+2000/03/25
+
+- SIO: Changed ifdefs for HP-UX.
+- General: LONG for 64bit HP-UX defined as unsigned int.
+
+2000/03/26
+
+- Reader: Added scReaderCheckApdu which checks if an APDU is built correctly
+  according to the case of the APDU.
+- T=0,T=1,ACR20,CT-API,Reflex60: Uses scReaderCheckApdu to check APDU.
+- ttcos: Supports NetKey card.
+- Geldkarte: Fixed classes of SelectFile.
+- Reflex60: Inserted little pause in scReflex60SendCmd:0x67.
+- Running tests under Linux:
+
+  Schlumberger Reflex64 --------------------------------------
+  Dumb Mouse --------------------------------------------    |
+  ACS Cybermouse (ACR20S) --------------------------    |    |
+                                                   V    V    V
+  tbasiccard + Compact BasicCard 1.1               +    +    +
+  tbasiccard + Enhanced BasicCard 2.3              +    +    +
+  tbradesco + Moeda Eletronica Bradesco            -[1] +    +
+  tcryptoflex + Cryptoflex w/ Key Gen              -[2] +    +
+  tcyberflex + Cyberflex Augmented Crypto (00)     -[3] +    +
+  tgpk4000 + GPK4000-s                             +    +    +
+  tgsmsim + Old French SIM card                    -[4] +    +
+  tmultiflex + Multiflex 8K ver.0x80               +    +    +
+  ttcos + NetKey card                              -[5] +    +
+  scdir + Compact BasicCard 1.1                    +    +    +
+  scdir + Enhanced BasicCard 2.3                   +    +    +
+  scdir + Moeda Eletronica Bradesco                +    +    +
+  scdir + Cryptoflex w/ Key Gen                    +    +    +
+  scdir + Cyberflex Augmented Crypto (00)          -[3] +    +
+  scdir + Cyberflex Augmented Crypto (F0)          -[3] +    +
+  scdir + Geldkarte                                +    +    +
+  scdir + GPK4000-s                                +    +    +
+  scdir + Eplus SIM card                           -[2] +    +
+  scdir + Old French SIM card                      -[4] +    +
+  scdir + Multiflex 8K ver.0x80                    +    +    +
+  scdir + Cash                                     -[4] +    +
+  scdir + NetKey card                              -[5] +    +
+  Working cards                                    5    13   13
+  Not working cards                                8    0    0
+
+  [1] Reader returns nonsense. Probably a bug in the reader.
+  [2] Reader reports a card failure.
+  [3] Reader reports an error and the ATR after trying to reset the card.
+      Error is not described in the documentation. A bug in the reader?
+  [4] Inverse convention. Dunno how I get this working.
+  [5] Because Le==0 is not supported.
+
+- GSM SIM: Added Le for scGsmsimCmdSelect.
+
+2000/03/29
+
+- STARCOS: Received STARCOS Toolkit. Thanks Marco and thanks G&D!
+  And now I can test the LED of the Chipdrives.
+- Running tests under Linux:
+
+  G&D PCT 200 aka Towitoko Chipdrive extern I ------
+                                                   V
+  tbasiccard + Compact BasicCard 1.1               +
+  tbasiccard + Enhanced BasicCard 2.3              +
+  tbradesco + Moeda Eletronica Bradesco            +
+  tcryptoflex + Cryptoflex w/ Key Gen              +
+  tcyberflex + Cyberflex Augmented Crypto (00)     +
+  tgpk4000 + GPK4000-s                             +
+  tgsmsim + Old French SIM card                    +
+  tmultiflex + Multiflex 8K ver.0x80               +
+  ttcos + NetKey card                              +
+  scdir + Compact BasicCard 1.1                    +
+  scdir + Enhanced BasicCard 2.3                   +
+  scdir + Moeda Eletronica Bradesco                +
+  scdir + Cryptoflex w/ Key Gen                    +
+  scdir + Cyberflex Augmented Crypto (00)          +
+  scdir + Cyberflex Augmented Crypto (F0)          +
+  scdir + Geldkarte                                +
+  scdir + GPK4000-s                                +
+  scdir + Eplus SIM card                           +
+  scdir + Old French SIM card                      +
+  scdir + Multiflex 8K ver.0x80                    +
+  scdir + Cash                                     +
+  scdir + NetKey card                              +
+  Working cards                                    13
+  Not working cards                                0
+
+2000/03/31
+
+- General: Defines for Sm@rtCafe.
+- Smartcard: ATRs for STARCOS and Sm@rtCafe.
+- Scdir: Added names of STARCOS and Sm@rtCafe.
+
+2000/04/02
+
+- Makefile: Remove shared libs on clean.
+- General: Added defines for MFC.
+- Smartcard: Added ATR for MFC 4.1.
+- MFC: Added first hack.
+- scdir: Added some support for MFC.
+
+2000/04/06
+
+- SmartCafe: Implemented driver.
+- Makefile: Remove scanclains when doing clean.
+- Smartcard: Call ScSmartcafeInit.
+- Smartcard: Added tsmartcafe.
+- scdir: Added basic support for Sm@rtCafe.
+- SmartCafe: RIP.
+
+2000/04/07
+
+- SmartCafe: Tested without card.
+- SmartCafe: Added scSmartcafeAuthApplet.
+
+2000/04/08
+
+- SmartCafe: tsmartcafe should be run until the end with a functional
+  Sm@rtCafe.
+- SmartCafe: scSmartcafeAuthApplet works with encryption, but not with
+  signature.
+
+2000/04/14
+
+- CardMan: Utimaco wanted to send me a free CardMan card reader. Today
+  a funny NDA arrived. The penalty would be 10 million Euros. And
+  especially funny is the last paragraph which handles situations not
+  covered by the NDA. These shoule be handled as they would have been
+  regulated if the signees of the NDA would have known about them.
+  I'm not going to sign this just to get the documentation for a card
+  reader. It is not my business to help to sell their card readers.
+  I'll probably order soon a PC Card reader from Schlumberger. Their
+  documentation is freely downloadable from the internet.
+
+2000/04/19
+
+- B1: Finally I received the B1 Pro from Deutsche Telekom, which I
+  ordered on 2000/01/12. (See entry there.) Its firmware version is
+  0.91. Is this bananaware?
+
+2000/06/07
+
+- Dumbmouse,Towitoko: Reset of cards with an ATR without historical
+  data works now.
+
+2000/06/12
+
+- Dox: Began writing real documentation in the texinfo format.
+
+2000/06/19
+
+- Scanclains: Fixed bug regarding SW. Wonder why it worked before.
+
+2000/05/20
+
+- Smartcard: Added ATR for SamOS v2.7.
+
+2000/05/21
+
+- Ordered Reflex 20, Reflex 72, Cryptoflex 8K, Cryptoflex for W2k from
+  Schlumberger.
+
+2000/05/25
+
+- cfupload: Simple tool to upload transparent files to a Schlumberger
+  Cyberflex. (And remove them and create DFs.) This has to be extended
+  to make it possible to create record files.
+- flexpasswd: Keys will also be written as characters.
+
+2000/05/26
+
+- Received Reflex 20, Reflex 72, Cryptoflex 8K, Cryptoflex for W2k.
+- Added ATR for Cryptoflex 8K (Cryptoflex for W2k).
+- Flexpasswd: Added transport key of Cryptoflex for W2k.
+- Scdir: Added getopt functionality.
+
+2000/06/07
+
+- Dumb Mouse,Towitoko: Fixed bug for cards with an ATR without historical
+  data.
+- README: Updated.
+
+2000/06/11
+
+- Dox: Added new documentation as texinfo.
+
+2000/06/12
+
+- Dox: Finished example.c.
+- Dox: Finished chapter 'Example application'.
+- Dox: Added appendix 'Example application source'.
+
+2000/06/13
+
+- Dox: Wrote chapter scGeneral functions, section functions.
+
+2000/06/22
+
+- Scanclains: Fixed bug.
+- Smartcard: Added ATR for SamOS v2.7.
+
+2000/06/25
+
+- Flexpassed: A bit improved.
+- Cfupload: Added. This is a simple tool to upload files to Schlumberger
+  Cyberflex cards.
+
+2000/06/26
+
+- Smartcard: Added ATR for Schlumberger Cyberflex 8K.
+- Flexpasswd: Added transport key of Cryptoflex for W2k.
+- Scdir: Added getopt functionality.
+- Cryptoflex: Added transport key of Cryptoflex to tcryptoflex.c.
+
+2000/06/29
+
+- Dox: Added scez.texi to Makefile.
+
+2000/07/10
+
+- Inserted 'extern "C"' into header files for C++.
+- Smartcafe: tsmartcafe compiles now without DES.
+- Changed "apdu.class" to "apdu.cse" for C++.
+
+2000/07/12
+
+- README: Updated.
+
+2000/07/13
+
+- Changed every occurence of "new" to make it more C++ compatible.
+- Added defines for Reflex 20. Hopefully I will get it working.
+
+2000/07/17
+
+- Reader: Added support for keeper configuration database.
+- Reader: scReaderGetConfig should have no memory leak.
+
+2000/07/18
+
+- General: Added nr to SC_READER_CONFIG to allow multiple configurations.
+
+2000/07/20
+
+- Got ten G&D SmartCafe cards. Thanks Marco.
+
+2000/07/22
+
+- Smartcard: New ATR for GSM card.
+
+2000/07/23
+
+- Reflex 60: Extended ACK waiting time to 250ms.
+- SmartCafe: Changed INSTALL Load to working format like in the Appendix of
+  the documentation.
+- SmartCafe: Tested with tsmartcafe. Now everything besides signed and/or
+  encrypted applet loading should work.
+
+2000/07/25
+
+- Starcos: Changed SPK2.2 ATR definition to detect the HBCI card.
+
+2000/07/26
+
+- scdir: Added AID for HBCI.
+
+2000/07/31
+
+- Smartcard: "Added" ATR for TCOS 1.2.
+- sio,siolight: Added O_EXCL to open in Unix.
+
+2000/08/03
+
+- Reader: Fixed bug in scReaderGetConfig. Thanks Per.
+
+2000/08/03
+
+- Added patch from Per Harald Myrvang with following improvements. Thanks.
+- Compiles on free BSDs.
+- Towitoko: Driver uses LED to signal what it does.
+- scwait: Added scwait. This waits for a Cyberflex card to be inserted.
+- sio,siolight: A second access does not block.
+
+2000/08/04
+
+- scwait: Including unistd.h.
+
+2000/08/06
+
+- General: Extended SC_CARD_VENDOR* defines to 32 bit. So mask should be
+  0xFFFFFF00.
+- scdir: Cleaned up card type output.
+- Towitoko: Cleaned up versions in sctowitoko.h.
+
+2000/08/08
+
+- icons: Added SCEZ icons.
+
+2000/08/10
+
+- TCOS: Got a new PKS-Card from Telesec using the SLE66 chip from Infineon.
+  Maybe they think, that the SLE44 is not anymore secure enough.
+
+2000/08/12
+
+- TCOS: Changed SC_CARD_TCOS_SIGG to SC_CARD_TCOS_44 and SC_CARD_TCOS_NETKEY
+  to SC_CARD_TCOS_66. Changed all files according to this.
+
+2000/08/13
+
+- cttest: Modified Makefile to compile cttest.
+- cttest: Added commend about not verifying dad/sad handling.
+- Makefile: Included icons.
+- rpm: Updated scez.spec.in.
+
+2000/08/23
+
+- Called Deutsche Post Signtrust asking about their SigG-compatible
+  signature card. This guy had humour. Let's see, when I get my papers.
+
+2000/08/24
+
+- Changed license to BSD 2.
+
+2000/08/26
+
+- Got my papers from Signtrust for the first round and sent them back.
+
+2000/08/27
+
+- First release of the application programmers documentation.
+
+2000/08/28
+
+- Palm: Compiles again cleanly for the Palm Pilot.
+- README: Comment about CVS.
+
+2000/09/01
+
+- CVS: Added Id to every source file. Always learning something new.
+- cardcheck: Added. This is a program to help you get information
+  about an unknown card.
+
+2000/09/02
+
+- Signtrust refused my rejection of §2 (3) of the therms of the contract.
+  §2 (3) states, that you have to return the chip card upon termination
+  of the contract. I rejected this, because I think the card is my
+  property because I payed for it. And because on the card is a RSA
+  key for encryption/decryption. Files and mails encrypted with his key
+  are not decipherable without the card. So Signtrust has lost one
+  customer. Telesec has no similar regulation in its therms of contract.
+
+2000/09/03
+
+- Everything SC_EXIT_OK. (Besides the test programs.)
+- MFC: scMfcCmdRehabilidate -> scMfcCmdRehabilitate.
+- MFC: scMfcCmdRehabilitate: INS=0x44.
+- Smartcard: ATRs only included, when module is included.
+- cardcheck: Added. This tests unknown (and also known cards) for
+  commands and in future files.
+
+2000/09/04
+
+- cardcheck: Fixed some typos.
+- RPM: Updated scez.spec.in.
+
+2000/09/08
+
+- General: Defines for GPK8000 and GPK16000.
+- Smartcard: ATRs for GPK8000 and GPK16000.
+
+2000/09/15
+
+- Smartcard: ATR for Viag Interkom Loop card.
+
+2000/09/16
+
+- Smartcard: Using GPK4000 driver for GPK8000.
+- GPK4000: Disabled GetCap for GPK8000
+- scdir: Works with GPK8000 using GPK4000 driver.
+- scdir: Description for GPK8000 cards.
+- scdir: Reads max session key from GPK4000/8000 cards.
+
+2000/09/17
+
+- cardcheck: Added some fingerprinting code. (Inspiration from the
+  nmap TCP/IP fingerprinting.) Even simple fingerprinting works very well.
+
+2000/09/20
+
+- Gemplus: Got GPK8000s, GemPC400 and GemPC410.
+
+2000/09/21
+
+- GCR410: Reset works.
+
+2000/09/22
+
+- scSmartcard: Added ATR for Paycard.
+- GCR410: Works with most commands. Dunno why it returns A2 or E4 with
+  some commands. (Which are some to many.)
+
+2000/10/18
+
+- Quick: Simple support.
+- Quick: Added quick.txt with the file structure and contents of a Quick
+  card.
+- scdir: Prints serial number of Quick card.
+
+2000/10/21
+
+- Changed rsp[ ... ] to rsp[ SC_GENERAL_SHORT_DATA_SIZE+2 ] in every
+  card driver.
+
+2000/10/25
+
+- Moved ci.status to ri.status.
+
+2000/10/26
+
+- GPK4000: Fixed bug in GetChallenge.
+
+2000/10/29
+
+- Bradesco: Updated information about the data in dox/bradesco.txt.
+
+2000/11/13
+
+- scdir: Added AID for SigG/OIC.
+
+2000/12/05
+
+- SIO: Using flock under Linux to lock serial port. (nonblocking)
+- Reader: Fixed bug in scReaderGetConfig (malloc one to small).
+
+2000/12/06
+
+- SIO: Added flock to siolight.
+- Perl5: Tried to make a perl5 interface with SWIG. SWIG has problems
+  with the word "WORD".
+
+2000/12/07
+
+- SIO: Removed O_EXCL from open. Didn't make any sense. (sio and siolight)
+- SIO: Added fcntl for locking. (sio and siolight)
+- README: Added description of mandatory locking for Linux.
+- Makefile: Changed CRYPTLIBPATH to /usr/local/lib.
+- Perl5: Module compiles cleanly and some helper functions have been added.
+  Header files with "#ifndef SWIG" or "#ifndef SWIG_C".
+
+2000/12/08
+
+- Perl5: A bit tested.
+
+2000/12/12
+
+- README: Added define for Intertex reader.
+- Intertex: Added fully undebugged driver. (3 hours of hacking)
+
+2000/12/18
+
+- Intertex: Ordered an Intertex IX2 PCMCIA smart card reader. It does
+  not cost 120 DEM, but 249 DEM. The person from Sweden, who made the
+  error to write DEM instead of US$ would have sold me one for the lower
+  price. But even their German distributor, who did not make the error,
+  sells me one for a much reduced price. Very friendly people. I 
+  I ordered the reader in Germany. I means less paying problems and
+  faster delivery.
+
+2000/12/19
+
+- Makefile: Creates now tar file with path.
+- SPEC: Addjusted for above change.
+- Running tests under Linux:
+
+  Gemplus GemPC410 aka GCR410 ----------------------
+                                                   V
+  tbasiccard + Compact BasicCard 1.1               +
+  tbasiccard + Enhanced BasicCard 2.3              +
+  tbradesco + Moeda Eletronica Bradesco            - [1]
+  tcryptoflex + Cryptoflex w/ Key Gen              +
+  tcyberflex + Cyberflex Augmented Crypto (00)     - [2]
+  tgpk4000 + GPK4000-s                             +
+  tgsmsim + Old French SIM card                    +
+  tmultiflex + Multiflex 8K ver.0x80               - [3]
+  ttcos + NetKey card                              - [4]
+  scdir + Compact BasicCard 1.1                    +
+  scdir + Enhanced BasicCard 2.3                   +
+  scdir + Moeda Eletronica Bradesco                +
+  scdir + Cryptoflex w/ Key Gen                    +
+  scdir + Cyberflex Augmented Crypto (00)          +
+  scdir + Geldkarte                                +
+  scdir + GPK4000-s                                +
+  scdir + Eplus SIM card                           +
+  scdir + Old French SIM card                      +
+  scdir + Multiflex 8K ver.0x80                    - [3]
+  scdir + NetKey card                              - [5]
+  Working cards                                    7
+  Not working cards                                4
+
+  [1] A2 (Card malfunction) after a Select File Parent. (Works now)
+  [2] A2 (Card malfunction) after a Select File.
+  [3] E4 (Card sent an invalid procedure byte) after Select File.
+  [4] F7 (Card removed) after a Select File MF.
+  [5] A2 (Card malfunction) after a Select File.
+
+2000/12/20
+
+- Smartcard: Added ATRs for GSM SIM cards. Saenks kju.
+
+2000/12/22
+
+- GSM SIM: Bug fixed in scGsmsimCmdRunGsmAlgo. Saenks Uwe Horn.
+
+2000/12/23
+
+- Inserted const where appropriate.
+- texi: Updated function declarations for const.
+- Makefile: By default compiled with Intertex IX2 reader driver.
+- Got a Kobil KAAN Pro for testing.
+- Running tests under Linux:
+
+  Kobil B1 Pro v0.91 via CT-API --------------------------
+  Kobil KAAN Pro v1.03 via CT-API ------------------     |
+                                                   V     V
+  tbasiccard + Compact BasicCard 1.1               +     +
+  tbasiccard + Enhanced BasicCard 2.3              +     +
+  tbradesco + Moeda Eletronica Bradesco            - [1] - [4]
+  tcryptoflex + Cryptoflex w/ Key Gen              - [2] - [2]
+  tcyberflex + Cyberflex Augmented Crypto (00)     +     +
+  tgpk4000 + GPK4000-s                             +     +
+  tgsmsim + Old French SIM card                    +     +
+  tmultiflex + Multiflex 8K ver.0x80               - [3] - [3]
+  ttcos + NetKey card                              +     +
+  scdir + Compact BasicCard 1.1                    +     +
+  scdir + Enhanced BasicCard 2.3                   +     +
+  scdir + Moeda Eletronica Bradesco                +     +
+  scdir + Cryptoflex w/ Key Gen                    - [2] - [2]
+  scdir + Cyberflex Augmented Crypto (00)          +     +
+  scdir + Geldkarte                                +     +
+  scdir + GPK4000-s                                +     +
+  scdir + Eplus SIM card                           +     +
+  scdir + Old French SIM card                      +     +
+  scdir + Multiflex 8K ver.0x80                    - [3] - [3]
+  scdir + NetKey card                              +     +
+  simman + Eplus SIM card                          +     +
+  Working cards                                    8     8
+  Not working cards                                3     3
+
+  [1] Hangs for 256 seconds after a Select File Parent and returns
+      with an error.
+  [2] Reset fails.
+  [3] Hangs for 8 seconds after a Select File command.
+  [4] Hangs a short while after a Select File Parent and returns
+      with an error.
+
+  This is after analysing each error and fixing the bugs in the following
+  lines. I looked at the communication of the CT-API driver with the
+  reader and IMO the errors left are because of the reader.
+- Cyberflex: Fixed bug in scCyberflexCmdSeek.
+- GPK4000: Fixed bug in scGpk4000CmdSelFil.
+- GPK4000: Fixed bug in scGpk4000CmdSetCodCrycks.
+- Adjusting function names to naming convention. (Acronyms in function
+  names are written as capitals.)
+
+  List of changes:
+
+  sed -e 's/scBasiccardDecrRApdu/scBasiccardDecrRAPDU/'
+  sed -e 's/scBasiccardEncrCApdu/scBasiccardEncrCAPDU/'
+  sed -e 's/scGsmsimCmdChangeChv/scGsmsimCmdChangeCHV/'
+  sed -e 's/scGsmsimCmdDisableChv/scGsmsimCmdDisableCHV/'
+  sed -e 's/scGsmsimCmdEnableChv/scGsmsimCmdEnableCHV/'
+  sed -e 's/scGsmsimCmdUnblockChv/scGsmsimCmdUnblockCHV/'
+  sed -e 's/scGsmsimCmdVerifyChv/scGsmsimCmdVerifyCHV/'
+  sed -e 's/scPtsCalcPck/scPtsCalcPCK/'
+  sed -e 's/scPtsCheckPck/scPtsCheckPCK/'
+  sed -e 's/scPtsDoPts/scPtsDoPTS/'
+  sed -e 's/scReaderCheckApdu/scReaderCheckAPDU/'
+  sed -e 's/scReaderPts/scReaderPTS/'
+  sed -e 's/scSmartcafeCmdSetPin/scSmartcafeCmdSetPIN/'
+  sed -e 's/scSmartcafeCmdVerifyPin/scSmartcafeCmdVerifyPIN/'
+  sed -e 's/->scPts/->scPTS/'
+
+  Relevant may be here for applications programmers:
+
+  scGsmsimCmdChangeChv -> scGsmsimCmdChangeCHV
+  scGsmsimCmdDisableChv -> scGsmsimCmdDisableCHV
+  scGsmsimCmdEnableChv -> scGsmsimCmdEnableCHV
+  scGsmsimCmdUnblockChv -> scGsmsimCmdUnblockCHV
+  scGsmsimCmdVerifyChv -> scGsmsimCmdVerifyCHV
+  scSmartcafeCmdSetPin -> scSmartcafeCmdSetPIN
+  scSmartcafeCmdVerifyPin -> scSmartcafeCmdVerifyPIN
+
+2000/12/24
+
+- CT-API: Recognises, if tag is sent by a Get Status.
+- GPK4000: Changed case of select parent to case 4. It works then with
+  the GCR410.
+- Intertex: Started debugging.
+
+  Intertex IX2 -------------------------------------
+                                                   V
+  tbasiccard + Compact BasicCard 1.1               +
+  tbasiccard + Enhanced BasicCard 2.3              +
+  tbradesco + Moeda Eletronica Bradesco            +
+  tcryptoflex + Cryptoflex w/ Key Gen              +
+  tcryptoflex + Cryptoflex 8K                      +
+  tcyberflex + Cyberflex Augmented Crypto (00)     - [1]
+  tgpk4000 + GPK4000-s                             +
+  tgsmsim + Old French SIM card                    +
+  tmultiflex + Multiflex 8K ver.0x80               - [2]
+  ttcos + NetKey card                              - [3]
+  scdir + Compact BasicCard 1.1                    +
+  scdir + Enhanced BasicCard 2.3                   +
+  scdir + Moeda Eletronica Bradesco                +
+  scdir + Cryptoflex w/ Key Gen                    +
+  scdir + Cryptoflex 8K                            +
+  scdir + Cyberflex Augmented Crypto (00)          - [1]
+  scdir + Geldkarte                                +
+  scdir + GPK4000-s                                +
+  scdir + Eplus SIM card                           +
+  scdir + Old French SIM card                      +
+  scdir + Multiflex 8K ver.0x80                    - [2]
+  scdir + NetKey card                              - [3]
+  simman + Eplus SIM card                          +
+  Working cards                                    9
+  Not working cards                                3
+
+  [1] 140 (Bad Procedure Byte) after Get Response after Select File MF.
+  [2] 129 (Unresponsive card) after Select File.
+  [3] 129 (Unresponsive card) while changing IFSD. Same error after a
+      Select File MF and each resynchronisation attempt.
+
+2000/12/25
+
+- Summary of reader tests:
+
+  Reader                                        Cards     Reader
+                                                working   type
+
+  ACS ACR20S aka Cybermouse                      38%      i
+  Dumb Mouse                                    100%      d
+  G&D PCT-200 aka Towitoko Chipdrive extern I   100%      d
+  Gemplus GCR410 aka GemPC410                    64%      i
+  Intertex IX2                                   75%      si
+  Kobil B1 Pro v0.91                             73%      i
+  Kobil KAAN Pro v1.04                           73%      i
+  Schlumberger Reflex64                         100%      si
+  Towitoko Chipdrive micro                      100%      d
+
+  Reader type: d: dumb, si: semi-intelligent, i: intelligent
+
+- Cryptoflex: Changed ChangePIN, Directory, UnblockPIN, VerifyPin
+  for Cryptoflex 8k.
+- Cryptoflex: Added RSAKeyGenUpd, SHA1Interm, SHA1Last for Cryptoflex 8k.
+- Added dox/newfunctionstr.txt, which contains proposed macros for
+  card driver writing.
+- Added dox/cryptoflex.txt, which contains the file structure of a
+  Cryptoflex 8K for Windows 2000.
+
+2000/12/28
+
+- MFC: Got a Xerox copy card (MFC 4.1 8kB). Thanks kju.
+- MFC: Fixed bug in Select.
+
+2001/01/02
+
+- scdir: Fixed bug in MFC section. Erase password may not be set, in
+  which case the Addess of MF was off by one byte.
+- Dumb Mouse: Set filter echo, when an UniProg is found. Thanks,
+  Uwe Horn.
+- Dumb Mouse: Usage of DCD by the UniProg is inverse. Thanks, Uwe
+  Horn.
+- Dumb Mouse: Special reset sequence for UniProg. Thanks, Uwe Horn.
+
+2001/01/03
+
+- cardcheck: Fingerprint status words are written to a file.
+
+2001/01/15
+
+- SmartCafe: Added a Get Response, just to be sure.
+
+2001/01/16
+
+- SmartCafe: Wrote cafeman.
+
+2001/01/17
+
+- scdir: A bit more information about the SmartCafe.
+- Smartcard: Added ATR for Postbank Geldkarte.
+
+2001/01/18
+
+- T=1: Datalen of WTX answer was 0.
+
+2001/01/20
+
+- SmartCafe: Encryption and signing of applets with DES and 3DES produce
+  the correct result.
+- SmartCafe: Added parameter maclen to CreateML.
+- SmartCafe: Tested with DES/3DES encryption and signing.
+- SmartCafe: Added PIN and key change to cafeman.
+- SmartCafe: Added PIN verification to Clear Memory in cafeman.
+- SmartCafe: With cafenman signed/encrypted applets can be stored in a file
+  and then again read and uploaded into the card.
+
+2001/01/21
+
+- SmartCafe: scSmartCafeCmdGetResp -> scSmartcafeCmdGetResp.
+- Geldkarte: Added command Get Statistics.
+- scdir: Formated output.
+- scdir: Added output of Get Statistics.
+- cardcheck: CLA in fingerprinting can begin with 6 or 9.
+
+2001/01/22
+
+- Basiccard,tbasiccard: Disabled ClearEeprom and WriteEeprom for BC3.*.
+
+2001/01/31
+
+- Intertex: Sent them the three non-working cards. Probably a problem
+  with the PTS. The IX2 is trying to run e.g. the Multiflex at 170kbps.
+- cyflexman: Select and deselect should hopefully work.
+
+2001/02/01
+
+- Kobil: Sent them the three non-working cards.
+
+2001/02/02
+
+- Intertex: Wow! They received today the cards.
+- dox/smartcafe: Comment about heap.
+
+2001/02/03
+
+- cyflexman: Execution of applets requires public read access.
+- sct1,scacr20,scctapi: Not pedantic about APDU case when NO_APDU_CHECK
+  is defined.
+
+2001/02/05
+
+- Intertex: Wow!^2 I received today a mail from Mats. It is indeed the
+  speed. Let's see, when I get the new firmware.
+
+2001/02/06
+
+- Intertex: Wow!^3 I got this morning the new firmware. I will test
+  it soon.
+- Intertex: Testing
+
+  Intertex IX2 -------------------------------------
+                                                   V
+  tbasiccard + Compact BasicCard 1.1               +
+  tbasiccard + Enhanced BasicCard 2.3              +
+  tcryptoflex + Cryptoflex 8K                      +
+  tcyberflex + Cyberflex Augmented Crypto (00)     +
+  tgpk4000 + GPK4000-s                             +
+  tgsmsim + Old French SIM card                    +
+  tmultiflex + Multiflex 8K ver.0x96               +
+  tsmartcafe + SmartCafe                           +
+  ttcos + Telesec old SigG card                    +
+  scdir + Compact BasicCard 1.1                    +
+  scdir + Enhanced BasicCard 2.3                   +
+  scdir + Cryptoflex 8K                            +
+  scdir + Cyberflex Augmented Crypto (00)          +
+  scdir + Geldkarte                                +
+  scdir + GPK4000-s                                +
+  scdir + MFC 4.1                                  +
+  scdir + Multiflex 3K                             +
+  scdir + Multiflex 8K ver.0x96                    +
+  scdir + Quick                                    +
+  scdir + Eplus SIM card                           +
+  scdir + Old French SIM card                      +
+  scdir + SmartCafe                                +
+  scdir + Netkey card                              +
+  scdir + Telesec old SigG card                    +
+  simman + Eplus SIM card                          +
+  Working cards                                    15
+  Not working cards                                0
+
+  Very good.
+
+- Current summary of reader tests:
+
+  Reader                                        Cards     Reader
+                                                working   type
+
+  ACS ACR20S aka Cybermouse                      38%      i
+  Dumb Mouse                                    100%      d
+  G&D PCT-200 aka Towitoko Chipdrive extern I   100%      d
+  Gemplus GCR410 aka GemPC410                    64%      i
+  Intertex IX2                                  100%      si
+  Kobil B1 Pro v0.91                             73%      i
+  Kobil KAAN Pro v1.04                           73%      i
+  Schlumberger Reflex64                         100%      si
+  Towitoko Chipdrive micro                      100%      d
+
+  Reader type: d: dumb, si: semi-intelligent, i: intelligent
+
+- tgpk4000: Executes Erase Card command depending on card type.
+
+2001-02-07
+
+- Intertex: Removed scIntertexSetSpeed. Didn't do anything and wasn't
+  used.
+
+2001-02-09
+
+- scdir: Added AID for IBM PKCS#11.
+
+2001-02-11
+
+- OpenPlatform: Added basic and untested OpenPlatform commands.
+- Intertex: Get every ca. 500 activates/resets and error and about
+  every 2000 commands. So this reader is currently not usable for
+  scanning and fingerprinting.
+
+2001-02-12
+
+- SmartCard: Added more ATRs for Multiflex. Thanks Matthias Eckermann.
+- ttcos: Does read the AID. Thanks Matthias Eckermann.
+- Perl: Added scopenplatform.h
+
+2001-02-13
+
+- Makefile: Added scmacros.h
+
+2001-03-01
+
+- Reader: Check for NULL pointer in apdu.
+- Dox: Added comment about reponse buffer size.
+- Smartcard: Added ATR for Debitel D2.
+- OpenPlaform: Fixed INS for Load.
+- Cardcheck: Added INS bytes for OpenPlatform.
+
+2001-03-20
+
+- Towitoko: sleep -> select in Linux because of incompatibility
+  with Netscape. Thanks Regis Gaschy.
+- STARCOS: Added basic drivers. Thanks Regis Gaschy.
+- Makefile: Added scstarcos.*
+- General: Added WITH_STARCOS
+- Smarcard: Added Starcos.
+
+2001-03-21
+
+- crdetect: Restructured.
+- Reader: Added SC_READER_DETECT_INFO.
+- Intertex,Dumbmouse,Towitoko,ACR20,Reflex60,CT-API: Added sc*Detect.
+- CT-API: T0 Case 1 commands are stripped to 4 bytes.
+
+2001-04-03
+
+- CT-API: Stubs for missing dynamic linking compile now again. Thanks
+  Matthias Bauer, for pointing this out.
+
+2001-04-12
+
+- scdir: Works now with Geldkarte v3.
+- reader: Moved definition of NAMENUMBER to screader.h.
+
+2001-04-18
+
+- That was v1.0.
+
+2001-05-16
+
+- smartcard: ProcessATR uses only first specified protocol in ATR.
+- SmartCafe: Removed explicit setting of protocol.
+
+2001-05-17
+
+- SmartCafe: Added typecast in scSmartcafeAuthApplet.
+- STARCOS: Added scSmartcardProcessATR to GetCardData.
+
+2001-05-19
+
+- Makefile: Added scgpr400.
+- General: Added ri->fd and setting it in scGeneralNewReader.
+- General: Added SC_READER_GPR400.
+- Reader: Added GPR400 funktions and variable table entry.
+- GPR400: Added first driver version. T=0 works. It seams, that the
+  GPR400 has problems with the same cards as the GCR400.
+- Running tests under Linux:
+
+  Gemplus GemPC400 aka GPR400 ----------------------
+                                                   V
+  tbradesco + Moeda Eletronica Bradesco            +
+  tcryptoflex + Cryptoflex w/ Key Gen              - [1]
+  tcyberflex + Cyberflex Augmented Crypto (00)     - [2]
+  tgpk4000 + GPK4000-s                             +
+  tgsmsim + Old French SIM card                    +
+  tmultiflex + Multiflex 8K ver.0x80               - [2]
+  scdir + Moeda Eletronica Bradesco                +
+  scdir + Cryptoflex w/ Key Gen                    +
+  scdir + Cyberflex Augmented Crypto (00)          - [3]
+  scdir + GPK4000-s                                +
+  scdir + Eplus SIM card                           +
+  scdir + Old French SIM card                      +
+  scdir + Multiflex 8K ver.0x80                    - [4]
+  Working cards                                    7
+  Not working cards                                3
+
+  [1] Increase succeeds, when it should fail without sending data.
+  [2] A2 (Card malfunction) after a Select File.
+  [3] A2 (Card malfunction) after a Get Data.
+  [4] E4 (Card sent an invalid procedure byte) after Select File.
+
+  The GPR400 has very similar failures as the GCR410. The failure
+  reasons of the IX2 suggest, that the GPR400 has problems with
+  fast cards too.
+
+2001-05-29
+
+- Makefile: Moved cafeman from progs to desprogs.
+
+2001-07-09
+
+- scdir: Added determination of HBCI support for GeldKarte.
+- GeldKarte: Added Verify PIN command.
+
+2001-09-05
+
+- Corrected scez.texi.
+
+2001-09-13
+
+- tcos: Added many command functions.
+
+2001-09-15
+
+- General: Added defines for Blue Dot Connector and JiB.
+- Smartcard: Added "ATR" for iButton.
+- Smartcard: Added 1-Wire support to scSmartcardProcessATR.
+- Blue Dot: Added.
+- tbluedot: Added.
+- crdetect: Added Blue Dot Connector.
+- Intertex: Made detection more reliable. (Blue Dot detected did
+  confuse the Intertex detection.)
+- Smartcard: Fixed bug in scSmartcardGetCardTypeExt.
+- README: Updated.
+
+2001-09-16
+
+- License: SCEZ is now made available under a BSD2 license and
+  alternatively unter the LGPL.
+
+2001-09-24
+
+- SIO Light: Fix for FreeBSD. Saenks Toni.
+- GPR400: Fix for FreeBSD. Saenks Toni.
+
+2001-11-06
+
+- Smartcard: Added ATR for VictorVox GSM card.
+
+2002-01-10
+
+- Dumb Mouse: Added support for the Phoenix reader.
+  Sanks h.berlioz@freesurf.fr.
+- EasyCheck: Added. Sanks Mikael Nystrom.
+
+2002-01-25
+
+- T1: Bug fixed. resplen was uchar and not int.
+
+2002-02-06
+
+- cardcheck: MULTOS commands added to list.
+
+2002-02-10
+
+- scsh: Added readline support.
+
+2002-02-13
+
+- T=1: Cleaned up by Andreas Jellinghaus.
+
+2002-02-14
+
+- Proton: Removed AskRandom.
+- Proton: Added some comments.
+- Proton: Added cash.txt.
+
+2002-02-15
+
+- automake: Added support for crosscompiling for ARM-Linux.
+
+2002-02-18
+
+- README: Added "-z6" to cvs checkout.
+
+2002-02-19
+
+- Smartcard: Added ATRs for Schlumberger Cyberflex Access Developer 32k,
+  Cryptoflex 16k and Swiss Postcard.
+
+2002-03-05
+
+- Season: Added software for Season logger.
+
+2002-03-22
+
+- filescan: Added.
+
+2002-04-9
+
+- Carte Bancaire: Added.
+- scdir: Added support for Carte Bancaire.
+
+2002-04-13
+
+- Smartcard: Added ATR mask for Carte Bancaire.
+- Carte Bancaire: Added scCartebPin2Hex.
+
+2002-04-29
+
+- scsh: Added support for ;-comments.
+
+2002-06-18
+
+- T=1: Bugfix (reset of errcntr)
+
+2002-06-20
+
+- ctapi: Fixed autoconf defines.
+
+2002-07-04
+
+- autoconf: Works now with RH 6.2 and 7.0 default installation.
+- rpm: Updated spec file.
+
+2002-07-11
+
+- scdir: Added output for GeldKarte with HBCI application.
+
+
+Mahlzeit
+
+Matthias Bruestle <m@mbsks.franken.de> aka endergone Zwiebeltuete
+
+BHEF
+

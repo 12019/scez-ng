@@ -1,0 +1,134 @@
+Summary: Smart Card Library.
+Name: scez
+Version: DATE
+Release: 1
+Copyright: BSD style
+Group: Development/Libraries
+Source: ftp://ftp.franken.de/pub/crypt/chipcards/scez/scez-DATE.tar.gz
+Buildroot: /var/tmp/scez-DATE-root
+
+%define prefix /usr
+
+%description
+SCEZ is a library to make portable smart card development easier.
+
+Supported readers:
+ - ACS ACR20S/Cybermouse (as far as this broken reader can be supported)
+ - Blue Dot Connector (via libjib)
+ - CT-API (e.g. for REINER SCT cyberJack, Kobil B1)
+ - Dumb Mouse
+ - Gemplus GCR410
+ - Gemplus GPR400
+ - Intertex IX2
+ - Schlumberger Reflex62/64
+ - Towitoko Chipdrive
+
+Supported cards:
+ - Carte Bancaire
+ - ComCard/IBM MFC (mostly untested)
+ - GeldKarte
+ - Gemplus GPK4000
+ - Gemplus GPK8000
+ - Giesecke & Devrient Smr@rtCafe
+ - GSM SIM
+ - Proton
+ - Quick
+ - Schlumberger Cryptoflex
+ - Schlumberger Cyberflex
+ - Schlumberger Multiflex
+ - Telesec TCOS2
+ - ZeitControl BasicCard
+
+This package includes SIO to access the serial port.
+
+%prep
+%setup
+
+%build
+./configure --prefix=$RPM_BUILD_ROOT/%{prefix}
+make
+
+%install
+if [ -n "$RPM_BUILD_ROOT" ] ; then
+   [ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
+fi
+make install
+mkdir -p $RPM_BUILD_ROOT/%{prefix}/include/scez
+install -m 644 scez/sc*.h $RPM_BUILD_ROOT/%{prefix}/include/scez/
+mkdir -p $RPM_BUILD_ROOT/%{prefix}/include/sio
+install -m 644 sio/*.h $RPM_BUILD_ROOT/%{prefix}/include/sio/
+
+%clean
+if [ -n "$RPM_BUILD_ROOT" ] ; then
+   [ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
+fi
+
+%files
+%defattr(-,root,root)
+%doc COPYRIGHT COPYRIGHT.sio PORTING.sio README README.sio VERSION.sio
+%doc txt/atrs.txt txt/bradesco.txt txt/cash.txt txt/dumbmouse.txt
+%doc txt/geldkarte.txt txt/gemclub.txt txt/netkey.txt txt/quick.txt
+%doc txt/simman.txt txt/sio.html txt/xerox-mfc41.txt
+%doc doc/example.c doc/scez.texi
+%doc misc/icons/scez-16-14.png misc/icons/scez-32-28.png
+%doc misc/icons/scez-72-64.png misc/icons/scez-sign.obj
+%doc misc/icons/scez-symbol.obj misc/icons/scez.png
+/%{prefix}/bin/*
+/%{prefix}/lib/*
+/%{prefix}/include/scez/*.h
+/%{prefix}/include/sio/*.h
+
+%changelog
+* Thu Jul  4 2002 Matthias Bruestle <m@mbsks.franken.de>
+- Updated description.
+
+* Sat Jun 29 2002 Matthias Bruestle <m@mbsks.franken.de>
+- Changed for automake.
+
+* Wed Apr 18 2001 Matthias Bruestle <m@mbsks.franken.de>
+- Added %prefix done by Matthias Eckermann.
+
+* Wed Jan 17 2001 Matthias Bruestle <m@mbsks.franken.de>
+- Added cafeman.
+- Added includes for Quick and Intertex IX2.
+- Updated description.
+
+* Tue Dec 19 2000 Matthias Bruestle <m@mbsks.franken.de>
+- Now %setup without parameters.
+
+* Sun Sep  4 2000 Matthias Bruestle <m@mbsks.franken.de>
+- Added cardcheck.
+
+* Sun Aug 13 2000 Matthias Bruestle <m@mbsks.franken.de>
+- Added include files for MFC and SmartCafe.
+- Added icons and some dox.
+- Added scwait, scanclains and cfupload.
+
+* Thu Mar 9 2000 Matthias Bruestle <m@mbsks.franken.de>
+- Install include files.
+
+* Wed Mar 8 2000 Matthias Bruestle <m@mbsks.franken.de>
+- Added cyflexman.
+
+* Wed Mar 8 2000 Matthias Bruestle <m@mbsks.franken.de>
+- Changed for shared libraries.
+
+* Tue Mar 7 2000 Matthias Bruestle <m@mbsks.franken.de>
+- Updated for library changes.
+- Removed simdump/simrestore.
+
+* Sat Jan 16 2000 Matthias Bruestle <m@mbsks.franken.de>
+- Reversed chronological order of changelog.
+
+* Thu Jan 6 2000 Matthias Bruestle <m@mbsks.franken.de>
+- Added simman.
+
+* Mon Dec 27 1999 Matthias Bruestle <m@mbsks.franken.de>
+- Added simdump, simrestore.
+
+* Sun Dec 26 1999 Matthias Bruestle <m@mbsks.franken.de>
+- Added scsh.
+
+* Tue Dec 7 1999 Matthias Bruestle <m@mbsks.franken.de>
+- First RPM ever.
+ 

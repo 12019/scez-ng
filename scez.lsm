@@ -1,0 +1,14 @@
+Begin3
+Title:          SCEZ 
+Version:        1.0
+Entered-date:   
+Description:    Smart Card Library
+Keywords:       smart card, library, cryptography, security
+Author:         Matthias Bruestle <m@mbsks.franken.de> 
+Maintained-by:  Matthias Bruestle <m@mbsks.franken.de> 
+Primary-site:   	        
+Home-page:      http://www.franken.de/crypt/scez.html
+Original-site:  
+Platforms:      Linux and other Unices
+Copying-policy: BSD2 or GNU Library General Public License
+End

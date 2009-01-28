@@ -1,0 +1,75 @@
+diff -ur libdes-4.01.orig/Makefile libdes-4.01/Makefile
+--- libdes-4.01.orig/Makefile	Mon Jan 13 17:05:12 1997
++++ libdes-4.01/Makefile	Tue Mar  7 19:25:43 2000
+@@ -90,27 +90,27 @@
+ 
+ ALL=	$(GENERAL) $(DES) $(TESTING) $(LIBDES) $(PERL) $(HEADERS)
+ 
+-DLIB=	libdes.a
++DLIB=	libdes.so
+ 
+ all: $(DLIB) destest rpw des speed des_opts
+ 
+ cc:
+-	make CC=cc CFLAGS="-O $(OPTS) $(CFLAG)" all
++	make -f Makefile CC=cc CFLAGS="-O $(OPTS) $(CFLAG)" all
+ 
+ gcc:
+-	make CC=gcc CFLAGS="-O3 -fomit-frame-pointer $(OPTS) $(CFLAG)" all
++	make -f Makefile CC=gcc CFLAGS="-fPIC -O3 -fomit-frame-pointer $(OPTS) $(CFLAG)" all
+ 
+ x86-elf:
+-	make DES_ENC=asm/dx86-elf.o CC=gcc CFLAGS="-DELF -O3 -fomit-frame-pointer $(OPTS) $(CFLAG)" all
++	make -f Makefile DES_ENC=asm/dx86-elf.o CC=gcc CFLAGS="-fPIC -DELF -O3 -fomit-frame-pointer $(OPTS) $(CFLAG)" all
+ 
+ x86-out:
+-	make DES_ENC=asm/dx86-out.o CC=gcc CFLAGS="-DOUT -O3 -fomit-frame-pointer $(OPTS) $(CFLAG)" all
++	make -f Makefile DES_ENC=asm/dx86-out.o CC=gcc CFLAGS="-DOUT -O3 -fomit-frame-pointer $(OPTS) $(CFLAG)" all
+ 
+ x86-solaris:
+-	make DES_ENC=asm/dx86-sol.o CFLAGS="-DSOL -O  $(OPTS) $(CFLAG)" all
++	make -f Makefile DES_ENC=asm/dx86-sol.o CFLAGS="-DSOL -O  $(OPTS) $(CFLAG)" all
+ 
+ x86-bsdi:
+-	make DES_ENC=asm/dx86bsdi.o CC=gcc CFLAGS="-DBSDI -O3 -fomit-frame-pointer $(OPTS) $(CFLAG)" all
++	make -f Makefile DES_ENC=asm/dx86bsdi.o CC=gcc CFLAGS="-DBSDI -O3 -fomit-frame-pointer $(OPTS) $(CFLAG)" all
+ 
+ asm/dx86-elf.o: asm/dx86-cpp.s asm/dx86unix.cpp
+ 	$(CPP) -DELF asm/dx86unix.cpp | as -o asm/dx86-elf.o
+@@ -129,25 +129,22 @@
+ 
+ $(DLIB): $(OBJS)
+ 	/bin/rm -f $(DLIB)
+-	ar cr $(DLIB) $(OBJS)
+-	-if test -s /bin/ranlib; then /bin/ranlib $(DLIB); \
+-	else if test -s /usr/bin/ranlib; then /usr/bin/ranlib $(DLIB); \
+-	else exit 0; fi; fi
++	ld -x --shared -o $(DLIB) $(OBJS)
+ 
+-des_opts: des_opts.o libdes.a
+-	$(CC) $(CFLAGS) -o des_opts des_opts.o libdes.a
++des_opts: des_opts.o $(DLIB)
++	$(CC) $(CFLAGS) -o des_opts des_opts.o $(DLIB)
+ 
+-destest: destest.o libdes.a
+-	$(CC) $(CFLAGS) -o destest destest.o libdes.a
++destest: destest.o $(DLIB)
++	$(CC) $(CFLAGS) -o destest destest.o $(DLIB)
+ 
+-rpw: rpw.o libdes.a
+-	$(CC) $(CFLAGS) -o rpw rpw.o libdes.a
++rpw: rpw.o $(DLIB)
++	$(CC) $(CFLAGS) -o rpw rpw.o $(DLIB)
+ 
+-speed: speed.o libdes.a
+-	$(CC) $(CFLAGS) -o speed speed.o libdes.a
++speed: speed.o $(DLIB)
++	$(CC) $(CFLAGS) -o speed speed.o $(DLIB)
+ 
+-des: des.o libdes.a
+-	$(CC) $(CFLAGS) -o des des.o libdes.a
++des: des.o $(DLIB)
++	$(CC) $(CFLAGS) -o des des.o $(DLIB)
+ 
+ tags:
+ 	ctags $(DES) $(TESTING) $(LIBDES)

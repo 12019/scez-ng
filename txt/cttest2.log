@@ -1,0 +1,82 @@
+Driver: Inofficial Towitoko Chipdrive driver for unix
+
+CT-API Library Test
+
+Loading CT-API library (libctapi-towitoko.so): Ok.
+Initialising CT-API library: Ok.
+Test 1: Error.
+   sad=0 dad=0 sw2=01 rsp=9001
+Test 2: Ok
+Test 3: Error.
+   sad=0 dad=0 sw1=90 rsp=9001
+Test 4: Ok
+   rsp=3B23003513FF9001
+Test 5: Error.
+   ret=0
+Test 6: Ok
+   rsp=0000009001 (It's really an error.)
+Test 7: Error.
+   ret=0
+Test 8: Error.
+   ret=-10 sad=0 dad=0 lenr=0
+Test 9: Error.
+   ret=-10 sad=0 dad=0
+Test 10: Error.
+   ret=-10
+Test 11: Error.
+   ret=-10 sad=0 dad=0
+Test 12: Error.
+   ret=-10
+Test 13: Error.
+   sad=0 dad=0 lenr=3 rsp=019000
+Test 14: Error.
+   ret=0
+Test 15: Ok
+   rsp=019000
+Test 16: Error.
+   ret=0
+Test 23: Skiped
+Test 24: Skiped
+Test 25: Skiped
+Test 26: Skiped
+Test 17: Ok
+Test 18: Ok
+Test 19: Ok
+Test 20: Error.
+   sad=0 dad=0 sw1=90 rsp=9000
+Test 21: Error.
+   ret=-1 sad=0 dad=0 sw1=69 rsp=6900
+Test 22: Error.
+   ret=-1 sad=0 dad=0 rsp=6E00
+Test 1b: Error.
+   sad=0 dad=0 sw1=64 rsp=6400
+Test 2b Ok
+Test 3b: Ok
+Test 5b: Ok
+Test 7b: Ok
+Test 8b: Ok
+Test 10b: Ok
+   rsp=6400
+Test 12b: Error.
+   sad=0 dad=0 lenr=3 rsp=009000
+Test 13b: Error.
+   ret=0
+Test 14b: Ok
+   rsp=009000
+Test 15b: Error.
+   ret=0
+Test 16b: Ok
+Test 17b: Ok
+Test 18b: Ok
+Test 22b: Error.
+   ret=-10 sad=0 dad=0 lenr=0
+Test 1c: Error.
+   ret=-10 sad=0 dad=0 lenr=0
+Test 2c: Error.
+   ret=-10 sad=0 dad=0 lenr=0
+Test 3c: Ok
+Test 1d: Ok
+Warning: Implemented CT-BCS version is 0.9
+Closing CT-API library: Ok.
+
+23 (including skiped) out of 45 tests passed.

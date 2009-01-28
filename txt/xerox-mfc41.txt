@@ -1,0 +1,98 @@
+Xerox Copycard
+==============
+
+Type
+----
+
+MFC 4.1 8kB
+
+Files
+-----
+
+/: MF
+	FCI: 63 0C 1F 12 3F 00 00 00 33 33 33 01 01 11
+	Size: 7954
+	AC: 00 00 33 33 33
+	File type: DF (ASCs valid)
+/0000: EF_CHV
+	FCI: 63 0C 00 18 00 00 00 00 03 00 00 01 01 00 04 01 00 00 10 FF
+	Size: 24
+	AC: 00 00 03 00 00
+	File type: transparent
+/0001: EF_KEY
+	FCI: 63 0C 00 78 00 01 00 00 33 33 33 01 01 02 00 07 FF 01 FF FF 01 07 FF 01 FF FF 02 07 FF 01 FF FF 03 07 FF 01 FF FF 05 07 FF 01 FF FF
+	Size: 120
+	AC: 00 00 33 33 33
+	File type: linear variable
+/0011: EF_KEY_MAN
+	FCI: 63 0C 00 18 00 11 00 00 33 33 33 01 01 02 00 07 FF 01 FF FF
+	Size: 24
+	AC: 00 00 33 33 33
+	File type: linear variable
+/4000: DF
+	FCI: 63 0C 04 00 40 00 50 00 33 33 33 01 01 10
+	Size: 1024
+	AC: 50 00 33 33 33
+	File type: DF (ASCs invalid)
+/4000/FD01: EF_DIR_MFC
+	FCI: 63 0D 00 6E FD 01 12 00 03 F3 33 01 02 01 16
+	Size: 110
+	AC: 12 00 03 F3 33
+	File type: 
+/4100: DF
+	FCI: 63 0C 01 A0 41 00 00 00 33 33 33 01 01 10
+	Size: 416
+	AC: 00 00 33 33 33
+	File type: DF (ASCs invalid)
+/4100/0001: EF_KEY
+	FCI: 63 0C 00 48 00 01 00 00 33 33 33 01 01 02 01 07 FF 01 FF FF 02 07 FF 01 FF FF 03 07 FF 01 FF FF
+	Size: 72
+	AC: 00 00 33 33 33
+	File type: linear variable
+/4100/FD01: EF_DIR_MFC
+	FCI: 63 0C 00 20 FD 01 01 00 03 FF 33 01 01 00
+	Size: 32
+	AC: 01 00 93 FF 33
+	File type: transparent
+/4100/FD02: EF_DIR_MFC
+	FCI: 63 0D 00 08 FD 02 C2 C0 04 3F 33 01 02 03 04
+	Size: 8
+	AC: C2 C0 04 3F 33
+	File type: linear fixed (?)
+/4100/FD03: EF_DIR_MFC
+	FCI: 63 0D 00 40 FD 03 02 00 04 FF 33 01 02 03 10
+	Size: 64
+	AC: 02 00 04 FF 33
+	File type: linear fixed (?)
+/4100/FD04: EF_DIR_MFC
+	FCI: 63 0D 00 40 FD 04 03 00 03 FF 33 01 02 03 10
+	Size: 64
+	AC: 03 00 03 FF 33
+	File type: linear fixed (?)
+/4100/FD05: EF_DIR_MFC
+	FCI: 63 0D 00 1C FD 05 02 00 04 FF 33 01 02 03 0E
+	Size: 28
+	AC: 02 00 04 FF 33
+	File type: linear fixed (?)
+/9F03: EF_AUT
+	FCI: 63 0C 00 60 9F 03 00 00 33 33 33 01 01 02 00 07 FF 01 FF FF 01 07 FF 01 FF FF 02 07 FF 01 FF FF 03 07 FF 01 FF FF
+	Size: 96
+	AC: 00 00 33 33 33
+	File type: linear variable
+/9F05: EF_LOG
+	FCI: 63 0D 00 1E 9F 05 00 00 00 00 00 01 02 03 0A
+	Size: 30
+	AC: 00 00 00 00 00
+	File type: 
+/FD01: EF_DIR_MFC
+	FCI: 63 0C 00 20 FD 01 00 00 0F FF 33 01 01 00
+	Size: 32
+	AC: 00 00 0F FF 33
+	File type: transparent
+/FD02: EF_DIR_MFC
+	FCI: 63 0C 00 20 FD 02 03 00 03 FF 33 01 01 00
+	Size: 32
+	AC: 00 00 03 FF 33
+	File type: transparent
+
+

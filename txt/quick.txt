@@ -1,0 +1,308 @@
+Quick
+=====
+
+ATR
+---
+
+3B BF 11 00 81 31 45 45 45 50 41 00 00 00 00 10 36 68 47 00 00 00 00 43
+                        E  P  A  |<- Card Ser. No. ? ->|
+
+Misc
+----
+
+- Read Binary up to 70 byte chunks.
+- Ammount of readable data: 727 bytes.
+- CWT to short?
+
+Fingerprint
+-----------
+
+00: 67 00
+04: 6E 00
+08: 6E 00
+0C: 68 82
+10: 6E 00
+14: 6E 00
+18: 6E 00
+1C: 68 82
+20: 6E 00
+24: 6E 00
+28: 6E 00
+2C: 68 82
+30: 6E 00
+34: 6E 00
+38: 6E 00
+3C: 68 82
+40: 6E 00
+44: 6E 00
+48: 6E 00
+4C: 68 82
+50: 6E 00
+54: 6E 00
+58: 6E 00
+5C: 68 82
+70: 6E 00
+74: 6E 00
+78: 6E 00
+7C: 68 82
+80: 6D 00
+84: 6E 00
+88: 6E 00
+8C: 68 82
+A0: 6E 00
+A4: 6E 00
+A8: 6E 00
+AC: 68 82
+B0: 6E 00
+B4: 6E 00
+B8: 6E 00
+BC: 68 82
+C0: 6E 00
+C4: 6E 00
+C8: 6E 00
+CC: 68 82
+D0: 6E 00
+D4: 6E 00
+D8: 6E 00
+DC: 68 82
+E0: 6D 00
+E4: 6E 00
+E8: 6E 00
+EC: 68 82
+F0: 6E 00
+F4: 6E 00
+F8: 6E 00
+FC: 68 82
+
+Command Scan
+------------
+
+00 20: 6B00 (Verify)
+00 82: 6B00 (External Authenticate)
+00 84: 6700 (Get Challenge)
+00 88: 6B00 (Internal Authenticate)
+00 A4: 6700 (Select File)
+00 B0: 6982 (Read Binary)
+00 B2: 6B00 (Read Record)
+00 D0: 6700 (Write Binary)
+00 D2: 6B00 (Write Record)
+80 00: 9000 (Get State (BasicCard))
+80 04: 9000 (Invalidate (GSM SIM, Cryptoflex, Cyberflex, MFC), Clear EEPROM (BasicCard)) Rsp: 86 84
+80 24: 6B00 (Change PIN (GSM SIM, Cryptoflex, Cyberflex, GPK4000, MFC, TCOS2), Unblock PIN (GPK4000))
+80 30: 6700 (Decrease (Cryptoflex, MFC), Select Purse Key (GPK4000))
+80 32: 6700 (Increase (GSM SIM, Cryptoflex, Cyberflex, MFC), Read Balance (GPK4000))
+80 34: 6700 (Decrease Stamped (GSM SIM, Multiflex), Debit (GPK4000))
+80 36: 6700 (Increase Stamped (MFC, Multiflex), Credit (GPK4000))
+80 52: 6700 ()
+80 76: 6B00 (Lock (MFC))
+80 8A: 6B00 (Pub Key Verify (GPK4000))
+80 8C: 6700 (Pub Key Send (GPK4000))
+80 C4: 6B00 (Envelope (GSM SIM))
+80 E0: 6700 (Create File (Cryptoflex, Cyberflex, GPK4000, MFC), Create ML (SmartCafe))
+80 EA: 6982 (Init Hashed (GPK4000))
+80 F2: 6B00 (Status (GSM SIM, Cyberflex))
+80 F4: 6700 ()
+80 F6: 9000 () Rsp: 30 32 34 37 37 35 82 30 C9 5E 98 9F 1D CE 0D D7
+E0 50: 6700 ()
+E0 52: 6700 ()
+E0 54: 6700 ()
+
+Commands
+--------
+
+Read Binary:
+	APDU: 00 D0 Offset[hi] Offset[lo] Le
+	Class: 2
+
+Read Record:
+	APDU: 00 D2 RecNum 00 Le
+	Class: 2
+
+Select:
+	APDU: 00 A4 00 00 02 FID[hi] FID[lo]
+	Class: 3
+
+Files
+-----
+
+/
+	MF
+/0001
+	EF, transparent, Size: 4
+	Data:
+		02 02 02 00
+	Data 2:
+		02 02 02 00
+/0002
+	EF, transparent, Size: 36
+	Data:
+		00 20 06 70 00 20 00 00 00 00 00 05 00 00 99 93
+		22 00 23 65 00 00 00 00 01 0C 01 99 50 01 20 00
+		0D 01 0E 01
+	Data 2:
+		00 20 06 70 00 20 00 00 00 00 00 05 00 00 99 93
+		22 00 23 65 00 00 00 00 01 0C 01 99 50 01 20 00
+		0D 01 0E 01
+/0003
+	EF, transparent, Size: 64
+	Data:
+		2C 17 A2 23 46 78 FC 03 E4 B8 D1 7C 90 35 CA 6A
+		B1 F4 A9 12 3C 18 8D 84 77 E2 B2 0A 0F DC 81 D9
+		74 FB D4 8F 30 85 A5 82 C0 80 0D 7F 89 23 47 5A
+		0B 09 75 60 59 55 5D 9A 70 E1 17 7D 37 4B 2C 4D
+	Data 2:
+		47 B7 F7 4D 91 2E A0 3F 84 42 10 26 A9 ED 63 4D
+		FF 17 6C CB F9 EA 5C 90 F0 F1 C7 E4 A5 60 5E 1E
+		D5 57 42 3E FD 65 67 F9 3D 20 49 9A D5 E7 74 40
+		6A AC 4B 31 B8 B1 EB 6B 39 E4 87 26 90 B1 CF B0
+/0004
+	EF, transparent, Size: 8
+	Data:
+		00 00 00 00 10 36 68 47
+        |<- Card Ser. No. ? ->|
+	Data 2:
+		00 00 00 00 10 36 68 48
+        |<- Card Ser. No. ? ->|
+/0105
+	EF, record
+	Data:
+		1)
+			00 00
+	Data 2:
+		1)
+			00 00
+/DF01
+	DF
+/DF01/0101  EF_BAL?
+	EF, transparent, Size: 38
+	Data:
+		04 00 94 00 00 AD C5 80 01 01 01 00 23 65 99 93
+                 |<-Ser. No.->|
+		22 00 33 65 82 00 40 00 03 0D 3F 20 02 01 00 01
+                             ...|<Max.>|
+                                Balance
+		03 01 00 12 00 00
+	Data 2:
+		04 00 94 00 00 AD C5 81 01 01 01 00 23 65 99 93
+                 |<-Ser. No.->|
+		22 00 33 65 82 00 40 00 03 0D 3F 20 02 01 00 01
+                             ...|<Max.>|
+                                Balance
+		03 01 00 12 00 00
+
+/DF01/0102  EF_TFIELD?
+	EF, transparent, Size: 4
+	Data:
+		00 00 00 00
+	Data 2:
+		00 00 00 00
+/DF01/0103  EF_LLOG/EF_PLOG?
+	EF, fixed record, Size: 8 * 25
+	Data:
+		1)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00
+		2)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00
+		3)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00
+		4)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00
+		5)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00
+		6)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00
+		7)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00
+		8)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00
+	Data 2:
+		1-8 ) 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00
+/DF01/0104  EF_LLOG/EF_PLOG?
+	EF, fixed record, Size: 8 * 33
+	Data:
+		1)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00
+		2)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00
+		3)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00
+		4)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00
+		5)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00
+		6)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00
+		7)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00
+		8)	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00
+	Data 2:
+		1-8 ) 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+			00
+/DF01/0110
+	EF, transparent, Size: 1
+	Data:
+		01
+	Data 2:
+		01
+/DF02
+	DF
+/DF02/0002
+	EF, transparent, Size: 36
+	Data:
+		00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+		00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+		00 00 00 00
+	Data 2:
+		00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+		00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+		00 00 00 00
+/DF02/0003
+	EF, transparent, RO, Size: ?
+	Data:
+/DF02/0004
+	EF, transparent, Size: 36
+	Data:
+		00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+		00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+		00 00 00 00
+	Data 2:
+		00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+		00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+		00 00 00 00
+/DF02/0005
+	EF, transparent, Size: 36
+	Data:
+		00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+		00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+		00 00 00 00
+	Data 2:
+		00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+		00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+		00 00 00 00
+
+EF_IEP: Description of EP, like provider, expiration date, user
+    specific data
+EF_IK: Info about cryptographic algorithms and keys
+EF_BAL: Current balance, currency, maximum balance
+EF_TFIELD: Transaction number
+EF_LLOG: Logs of load transactions, like transaction number, balance
+    after load, amount loaded, currency
+EF_PLOG: Logs of purchase transactions, like amount spent, currency
+
+INITIALIZE IEP
+CREDIT IEP
+DEBIT IEP
+CONVERT IEP CURRENCY
+UPDATE IEP PARAMETER
+

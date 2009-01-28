@@ -1,0 +1,332 @@
+# Makefile for MS Visual C++ 5.0.
+
+# $Id: Makefile.vc5 1009 2001-02-13 10:43:49Z zwiebeltu $
+
+# Start by: nmake -f Makefile.vc5
+#
+# Make sure the environment is correctly set. This is e.g. done with the
+# batch program vcvars32.bat.
+
+# Port where reader is attached. This is used by all test programs.
+#
+# CT-API: Meaning of port is driver specific. The linux/solaris CT-API
+#    drivers normaly use port 0-3 for COM 1-4. The official Towitoko
+#    driver uses probably port 0 for the default reader and port 1-4
+#    for COM 1-4.
+#
+# Dumbmouse,Towitoko: "0","1","2","3" is substituted by the device name
+#    of the serial port. See sc_reader.c. If no apropriate substitution
+#    devices are available READER_PORT can contain the full devicename.
+
+#PORT=/DREADER_PORT="\"0\""
+PORT=/DREADER_PORT="\"1\""
+#PORT=/DREADER_PORT="\"2\""
+#PORT=/DREADER_PORT="\"3\""
+
+# Reader type
+
+#TYPE=/DREADER_TYPE=SC_READER_ACR20
+#TYPE=/DREADER_TYPE=SC_READER_B1
+#TYPE=/DREADER_TYPE=SC_READER_CTAPI
+TYPE=/DREADER_TYPE=SC_READER_DUMBMOUSE
+#TYPE=/DREADER_TYPE=SC_READER_GCR400
+#TYPE=/DREADER_TYPE=SC_READER_INTERTEX
+#TYPE=/DREADER_TYPE=SC_READER_TOWITOKO
+
+# Card slot in reader
+# 
+# CT-API: The linux/solaris CT-API drivers normaly use slot 0. The
+#    official Towitoko driver uses slot 1.
+# Dumb Mouse: Slot 1.
+# Towitoko: Currently only slot 1.
+
+#SLOT=/DREADER_SLOT=0
+SLOT=/DREADER_SLOT=1
+#SLOT=/DREADER_SLOT=2
+
+# RESPECTS_LE: When defined my T=1 implementation limits response
+#    length to Le bytes. This is how I understand ISO7816-4 5.3
+#    and A 2S, A 4S.
+
+#RESPLE=/DRESPECTS_LE
+
+# READER_DEBUG: Prints communication data to stdout.
+#
+
+#RDBG=/DREADER_DEBUG 
+
+# CRYPTLIBPATH: Path to cryptlib.
+#
+
+CRYPTLIBPATH=c:\sc\cryptlib
+
+##########################################################################
+#              Probably no changes needed after this.                    #
+##########################################################################
+
+.c.obj::
+   $(CC) @<<
+   $(CFLAGS) $< 
+<<
+
+LIBDES_DEF=/Ilibdes /DWITH_DES /DWITH_LIBDES
+CRYPTLIB_DEF=/I$(CRYPTLIBPATH) /DWITH_DES /DWITH_CRYPTLIB
+OPENSSL_DEF=/DWITH_DES /DWITH_OPENSSL
+
+DEFINES=$(PORT) $(TYPE) $(SLOT) $(RESPLE) $(RDBG) $(LIBDES_DEF)
+
+CC=cl.exe
+LIB32=link.exe
+
+CFLAGS=/nologo /Ox /W3 /DWIN32 /D__WIN32__ /D_WINDOWS /DWINDOWS /D_CONSOLE $(DEFINES) /c
+LIB_FLAGS=/nologo
+PROG_FLAGS=/nologo /incremental:no /machine:I386 /subsystem:console 
+
+LIBS=libdes\des.lib sio.lib scez.lib
+PROGS= \
+	tacr20.exe \
+	tbasiccard.exe \
+	tbradesco.exe \
+	tcfkeygen.exe \
+	tcryptoflex.exe \
+	tctapi.exe \
+	tdumbmouse.exe \
+	tgpk4000.exe \
+	tgsmsim.exe \
+	tmultiflex.exe \
+	tsmartcard.exe \
+	ttcos.exe \
+	ttowitoko.exe \
+	bcupload.exe \
+	crdetect.exe \
+	cttest.exe \
+	getcert.exe \
+	scdir.exe \
+	scsh.exe
+
+#	simdump.exe
+
+ALL: sio.lib scez.lib $(PROGS)
+
+SCEZ_OBJS= \
+	scacr20.obj \
+	scbasiccard.obj \
+	sccryptoflex.obj \
+	scctapi.obj \
+	sccyberflex.obj \
+	scdumbmouse.obj \
+	scgcr400.obj \
+	scgeldkarte.obj \
+	scgeneral.obj \
+	scgpk4000.obj \
+	scgsmsim.obj \
+	scintertex.obj \
+	scmfc.obj \
+	scmultiflex.obj \
+	scproton.obj \
+	scpts.obj \
+	scquick.obj \
+	screader.obj \
+	screflex60.obj \
+	scsmartcard.obj \
+	scsmartcafe.obj \
+	sct0.obj \
+	sct1.obj \
+	sctcos.obj \
+	sctowitoko.obj
+
+scez.lib: $(SCEZ_OBJS)
+    $(LIB32) -lib @<<
+  $(LIB_FLAGS) /out:scez.lib $(SCEZ_OBJS)
+<<
+
+SIO_OBJS= \
+	sio.obj \
+	slog.obj
+
+sio.lib: $(SIO_OBJS)
+    $(LIB32) -lib @<<
+  $(LIB_FLAGS) /out:sio.lib $(SIO_OBJS)
+<<
+
+tacr20.exe: $(LIBS) tacr20.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:tacr20.exe tacr20.obj $(LIBS)
+<<
+
+tbasiccard.exe: $(LIBS) tbasiccard.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:tbasiccard.exe tbasiccard.obj $(LIBS)
+<<
+
+tbradesco.exe: $(LIBS) tbradesco.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:tbradesco.exe tbradesco.obj $(LIBS)
+<<
+
+tcfkeygen.exe: $(LIBS) tcfkeygen.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:tcfkeygen.exe tcfkeygen.obj $(LIBS)
+<<
+
+tcryptoflex.exe: $(LIBS) tcryptoflex.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:tcryptoflex.exe tcryptoflex.obj $(LIBS)
+<<
+
+tctapi.exe: $(LIBS) tctapi.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:tctapi.exe tctapi.obj $(LIBS)
+<<
+
+tdumbmouse.exe: $(LIBS) tdumbmouse.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:tdumbmouse.exe tdumbmouse.obj $(LIBS)
+<<
+
+tgpk4000.exe: $(LIBS) tgpk4000.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:tgpk4000.exe tgpk4000.obj $(LIBS)
+<<
+
+tgsmsim.exe: $(LIBS) tgsmsim.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:tgsmsim.exe tgsmsim.obj $(LIBS)
+<<
+
+tmultiflex.exe: $(LIBS) tmultiflex.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:tmultiflex.exe tmultiflex.obj $(LIBS)
+<<
+
+tsmartcard.exe: $(LIBS) tsmartcard.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:tsmartcard.exe tsmartcard.obj $(LIBS)
+<<
+
+ttcos.exe: $(LIBS) ttcos.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:ttcos.exe ttcos.obj $(LIBS)
+<<
+
+ttowitoko.exe: $(LIBS) ttowitoko.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:ttowitoko.exe ttowitoko.obj $(LIBS)
+<<
+
+bcupload.exe: $(LIBS) bcupload.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:bcupload.exe bcupload.obj $(LIBS)
+<<
+
+crdetect.exe: $(LIBS) crdetect.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:crdetect.exe crdetect.obj $(LIBS)
+<<
+
+cttest.exe: $(LIBS) cttest.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:cttest.exe cttest.obj $(LIBS)
+<<
+
+flexpasswd.exe: $(LIBS) flexpasswd.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:flexpasswd.exe flexpasswd.obj $(LIBS)
+<<
+
+getcert.exe: $(LIBS) getcert.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:getcert.exe getcert.obj $(LIBS)
+<<
+
+scdir.exe: $(LIBS) scdir.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:scdir.exe scdir.obj $(LIBS)
+<<
+
+scsh.exe: $(LIBS) scsh.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:scsh.exe scsh.obj $(LIBS)
+<<
+
+simdump.exe: $(LIBS) simdump.obj
+    $(LIB32) @<<
+  $(PROG_FLAGS) /out:simdump.exe simdump.obj $(LIBS)
+<<
+
+clean:
+	-@erase sio.obj
+	-@erase slog.obj
+	-@erase sio.lib
+	-@erase scacr20.obj
+	-@erase scbasiccard.obj
+	-@erase sccryptoflex.obj
+	-@erase scctapi.obj
+	-@erase scdumbmouse.obj
+	-@erase scgcr400.obj
+	-@erase scgeldkarte.obj
+	-@erase scgeneral.obj
+	-@erase scgpk4000.obj
+	-@erase scgsmsim.obj
+	-@erase scintertex.obj
+	-@erase scmfc.obj
+	-@erase scmultiflex.obj
+	-@erase scproton.obj
+	-@erase scpts.obj
+	-@erase scquick.obj
+	-@erase screader.obj
+	-@erase scsmartcafe.obj
+	-@erase scsmartcard.obj
+	-@erase sct0.obj
+	-@erase sct1.obj
+	-@erase sctcos.obj
+	-@erase sctowitoko.obj
+	-@erase scez.lib
+	-@erase tacr20.obj
+	-@erase tacr20.exe
+	-@erase tbasiccard.obj
+	-@erase tbasiccard.exe
+	-@erase tbradesco.obj
+	-@erase tbradesco.exe
+	-@erase tcfkeygen.obj
+	-@erase tcfkeygen.exe
+	-@erase tcryptoflex.obj
+	-@erase tcryptoflex.exe
+	-@erase tctapi.obj
+	-@erase tctapi.exe
+	-@erase tcyberflex.obj
+	-@erase tcyberflex.exe
+	-@erase tdumbmouse.obj
+	-@erase tdumbmouse.exe
+	-@erase tgpk4000.obj
+	-@erase tgpk4000.exe
+	-@erase tgsmsim.obj
+	-@erase tgsmsim.exe
+	-@erase tmultiflex.obj
+	-@erase tmultiflex.exe
+	-@erase treflex60.obj
+	-@erase treflex60.exe
+	-@erase tsmartcard.obj
+	-@erase tsmartcard.exe
+	-@erase ttcos.obj
+	-@erase ttcos.exe
+	-@erase ttowitoko.obj
+	-@erase ttowitoko.exe
+	-@erase bcupload.obj
+	-@erase bcupload.exe
+	-@erase crdetect.obj
+	-@erase crdetect.exe
+	-@erase cttest.obj
+	-@erase cttest.exe
+	-@erase flexpasswd.obj
+	-@erase flexpasswd.exe
+	-@erase getcert.obj
+	-@erase getcert.exe
+	-@erase scdir.obj
+	-@erase scdir.exe
+	-@erase scsh.obj
+	-@erase scsh.exe
+	-@erase simdump.obj
+	-@erase simdump.exe
+
+

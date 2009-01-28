@@ -1,0 +1,60 @@
+sio - serial I/O library - portable Unix (most platforms), WIN32
+      Documentation at the moment is sio.h
+
+stest - serial test program
+
+This package also includes a totally independant implementation of 
+something that emulates "SCAM - Smart Card Analyser and Manipulator".
+(I wrote it so I could use the perl instruction and scanning logic
+that comes with SCAM in a portable code base).
+
+Since the original version this code base has evolved into a reader
+and card independant interface for ISO 7816 smartcards.
+
+Copyright 1993-1997, Tim Hudson. All rights reserved.
+
+You can pretty much do what you like with this code except pretend that 
+you wrote it provided that any derivative of this code includes the
+above comments unchanged. If you put this in a product then attribution
+is mandatory. See the details in the COPYING file.
+
+Tim Hudson
+tjh@cryptsoft.com
+30-Aug-97
+
+Used by SCEZ (1999/08/18):
+
+SIO_CONTROL_CTS
+SIO_CONTROL_DCD
+SIO_CONTROL_DSR
+SIO_IOMODE_DIRECT
+SIO_IOMODE_INDIRECT
+SIO_PARITY_EVEN
+SIO_PARITY_NONE
+SIO_PARITY_ODD
+SIO_READ_WAIT_DEFAULT
+
+SIO_Close
+SIO_Delay
+SIO_DropRTS
+SIO_GetControlState
+SIO_GetParity
+SIO_Open
+SIO_RaiseDTR
+SIO_RaiseRTS
+SIO_ReadBuffer
+SIO_ReadChar
+SIO_ReadControlState
+SIO_SetControlState
+SIO_SetDataBits
+SIO_SetIOMode
+SIO_SetParity
+SIO_SetReadTimeout
+SIO_SetSpeed
+SIO_SetStopBits
+SIO_WaitForData
+SIO_WriteBuffer
+SIO_WriteChar
+SIO_WriteControlState
+SIO_WriteSettings
+

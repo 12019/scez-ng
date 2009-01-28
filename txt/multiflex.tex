@@ -1,0 +1,1348 @@
+\documentclass[a4paper,oneside]{article}
+
+\title{Schlumberger Multiflex 3K/8K and (limited) Cryptoflex}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Preface}
+
+I wrote this document, because there is (Update: was) nearly no detailed
+technical documentation available about chipcards.
+
+The sources for this documentation are the Smartcard Developer Kit
+(Can't say, that it is worth it's money. ''Handbuch der Chipkarten''
+(or in English probably ''Handbook of Chipcards'') from Rankl and
+Effing is a much better and at least in Germany much cheaper book.),
+the data files of EZFormatter, the ''technical highlights'' from
+Schlumberger (This is the ''manual'' which you can order there for
+US\$5. Not that interesting, that it would justify that much money.),
+usenet newsgroups and from experimenting with the card.
+
+You can order Schlumberger cards (Multiflex 3K, Multiflex 8K, Cryptoflex
+(if in the USA or Canada), Cyberflex (Java card), Payflex, etc.) in
+quantities of 5 at their eshop at https://www.cyberflex.slb.com/.
+
+\section{Commands}
+
+%-------------------------------------------------------------------
+
+\subsection{Change PIN}
+
+\subsubsection*{Description}
+
+Replaces the 8-byte PIN in the currently selected PIN file with
+a new 8-byte value.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 24 & 00 & 01 & 10 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data1:] Current PIN (8 Byte filled up with FF)
+\item[Data2:] New PIN (8 Byte filled up with FF)
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Check ROM}
+
+\subsubsection*{Description}
+
+Tests integrity of ROM code.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+?? & CC & ?? & ?? & ?? \\ \hline
+\end{tabular}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|c|} \hline
+?? & SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Create File}
+
+\subsubsection*{Description}
+
+Creates a new file in the current directory. The new file becomes
+the current file.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & E0 & P1 & P2 & Lc \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[P1:] Initialization flag (00: Initialize, FF: Do not initialize)
+\item[P2:] Number of records for (fixed-length?) record files
+\item[Data1:] File description
+\item[Data2:] First 6 bytes of cryptogram when required by access conditions.
+\end{description}
+
+\begin{table}[h!]
+\caption{File description for creation of file}
+\begin{center}
+\begin{tabular}{|c|c|l|} \hline
+Byte & Value & Meaning  \\ \hline \hline
+1-2  &  FFFF  &  Unused  \\ \hline
+3-4  &  -  &  Size (also for DF)  \\ \hline
+5-6  &  -  &  FID  \\ \hline
+7    &     &  File type  \\ \cline{2-3}
+     &  01 &  Transparent file \\ \cline{2-3}
+     &  02 &  Record file with fixed-length records \\ \cline{2-3}
+     &  04 &  Record file with variable-length records \\ \cline{2-3}
+     &  06 &  Cyclic file \\ \cline{2-3}
+     &  38 &  Directory file  \\ \hline
+8    &  -  &  Update access conditions (see below) \\ \hline
+9-11 &     &  Access conditions (see below) \\ \hline
+9 High &   &  DF: Directory (Only Multiflex 8K and Cryptoflex)\\
+     &     &  EF: Read, Seek \\ \hline
+9 Low &    &  DF: - \\
+     &     &  EF: Update, Decrease, Decrease Stamped \\ \hline
+10 High &  &  DF: Delete File \\
+     &     &  EF: Increase, Increase Stamped \\\hline
+10 Low &   &  DF: Create File \\
+     &     &  EF: Create Record \\ \hline
+11 High &  &  DF/EF: Rehabilitate \\ \hline
+11 Low &   &  DF/EF: Invalitate \\ \hline
+12   &     &  Status \\ \cline{2-3}
+     &  00 &  blocked \\ \cline{2-3}
+     &  01 &  unblocked \\ \hline
+13   &  -  &  Number of following bytes \\ \hline
+n - n+2 &- &  Access keys for access conditions \\
+     &     &  (Nibble is cryptographic key number) \\ \hline
+m    &  -  &  Record length (only for record files) \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[h!]
+\caption{Elementary file update access conditions}
+\begin{center}
+\begin{tabular}{|c|c|l|l|} \hline
+Bit 8 & Bit 7 & Allowed Operations & Disallowed Operations \\ \hline \hline
+0 & 0 & Update & Increase, Decrease \\ \hline
+0 & 1 & Update, Increase & Decrease \\ \hline
+1 & 0 & Update, Decrease & Increase \\ \hline
+1 & 1 & Decrease, Increase & Update \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[h!]
+\caption{Identities or authentications for access conditions}
+\begin{center}
+\begin{tabular}{|l|c|} \hline
+Key knowledge needed & Value of access condition nibble \\ \hline \hline
+Always possible & 0 \\ \hline
+PIN & 1 \\ \hline
+Protected & 3 \\ \hline
+Authenticated & 4 \\ \hline
+PIN and protected & 6 \\ \hline
+PIN and authenticated & 8 \\ \hline
+Never possible & F \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Create Record}
+
+\subsubsection*{Description}
+
+Creates a new record at the end of the current record file and
+optionally write data to it. The filesize can still not be more
+than allocated at creation time.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+C0 & E2 & 00 & 00 & Lc \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data1:] Data to be written to new record.
+\item[Data2:] First 6 bytes of cryptogram when required by access conditions.
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Decrease}
+
+\subsubsection*{Description}
+
+The oldest (that is, previous) record in a cyclic file is overwritten
+with the newest (that is, current) record, minus the amount given
+in the command. This new record then becomes the current record.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 30 & 00 & 00 & Lc \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data1:] 3 Byte value to be subtracted
+\item[Data2:] First 6 bytes of cryptogram when required by access conditions.
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+Data may be available.
+
+%-------------------------------------------------------------------
+
+\subsection{Decrease Stamped (Only Multiflex 8K)}
+
+\subsubsection*{Description}
+
+The oldest (that is, previous) record in a cyclic file is overwritten
+with the newest (that is, current) record, minus the amount given
+in the command. This new record then becomes the current record.
+Give Challenge must preceede this command.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 34 & 00 & 00 & Lc \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data1:] 3 Byte value to be subtracted
+\item[Data2:] First 6 bytes of cryptogram when required by access conditions.
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+Stamped data may be available.
+
+\begin{table}[h!]
+\caption{Stamped data}
+\begin{center}
+\begin{tabular}{|c|l|} \hline
+Byte & Description \\ \hline \hline
+1 - 3 & New value \\ \hline
+4 - 6 & Ammount subtracted \\ \hline
+7 - 12 (14?) & Cryptogram \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+%-------------------------------------------------------------------
+
+\subsection{Delete File}
+
+\subsubsection*{Description}
+
+Deletes the named file.
+
+It appears, that files in a DF can only be deleted in same order
+as creation. Luckily whole DFs can be deleted.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & E4 & 00 & 00 & Lc \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data1:] 2 Byte file identifier
+\item[Data2:] First 6 bytes of cryptogram when required by access conditions.
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Directory (Only Multiflex 8K and Cryptoflex)}
+
+\subsubsection*{Description}
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Le \\ \hline \hline
+F0 & A8 & 00 & 00 & 00 \\ \hline
+\end{tabular}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+Directory data my be available.
+
+\begin{table}[h!]
+\caption{Directory data for each file}
+\begin{center}
+\begin{tabular}{|c|c|l|} \hline
+Byte & Value & Meaning  \\ \hline \hline
+1-2  &  -  &  DF: Free bytes available (?) \\
+     &     &  EF: Size \\ \hline
+3-4  &  -  &  FID  \\ \hline
+5    &  -  &  File type \\ \hline
+6    &  -  &  Status \\ \hline
+7    &  -  &  Record length \\ \hline
+8    &  -  &  Number of records \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+%-------------------------------------------------------------------
+
+\subsection{External Authentication}
+
+\subsubsection*{Description}
+
+The terminal wishes to gain external authentication access to the
+card without sending a key to it using Verify Key. It got a
+challenge from the card using Get Challenge and is now going to
+return its encryption of this challenge to prove it knows the key.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+C0 & 82 & 00 & 00 & 07 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data1:] Key number (00-0F)
+\item[Data2:] First 6 bytes of DES encrypted challenge
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Get Challenge}
+
+\subsubsection*{Description}
+
+The card is requested to send back an 8-byte challenge.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Le \\ \hline \hline
+C0 & 84 & 00 & 00 & 08 \\ \hline
+\end{tabular}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|c|} \hline
+Challenge & SW1 & SW2 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Challenge:] 8 Byte random challenge to be used with External
+     Authentication
+\end{description}
+
+%-------------------------------------------------------------------
+
+\subsection{Get Response}
+
+\subsubsection*{Description}
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Le \\ \hline \hline
+C0 & C0 & 00 & 00 & Le \\ \hline
+\end{tabular}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|c|} \hline
+Data & SW1 & SW2 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data:] Le Bytes of available data
+\end{description}
+
+%-------------------------------------------------------------------
+
+\subsection{Give Challenge (Only Multiflex 8K)}
+
+\subsubsection*{Description}
+
+Sends a 8-byte challenge to the card.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 86 & 00 & 00 & 08 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data:] 8 Byte random challenge
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Increase}
+
+\subsubsection*{Description}
+
+The oldest (i.e., previous) record in a cyclic file is overwritten
+with the newest (i.e., current) record, plus the amount given in the
+command. This new record then becomes the current record.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 32 & 00 & 00 & Lc \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data1:] 3 Byte numeric value to be added
+\item[Data2:] First 6 bytes of cryptogram when required by access conditions.
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+Data may be available.
+
+%-------------------------------------------------------------------
+
+\subsection{Increase Stamped (Only Multiflex 8K)}
+
+\subsubsection*{Description}
+
+The oldest (i.e., previous) record in a cyclic file is overwritten
+with the newest (i.e., current) record, plus the amount given in the
+command. This new record then becomes the current record.
+Give Challenge must preceede this command.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 36 & 00 & 00 & Lc \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data1:] 3 Byte numeric value to be added
+\item[Data2:] First 6 bytes of cryptogram when required by access conditions.
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+Stamped data may be available.
+
+\begin{table}[h!]
+\caption{Stamped data}
+\begin{center}
+\begin{tabular}{|c|l|} \hline
+Byte & Description \\ \hline \hline
+1 - 3 & New value \\ \hline
+4 - 6 & Ammount subtracted \\ \hline
+7 - 12 (14?) & Cryptogram \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+%-------------------------------------------------------------------
+
+\subsection{Internal Authentication}
+
+\subsubsection*{Description}
+
+The terminal wishes to authenticate the card to ensure it is a
+valid card, so it sends the card a challenge that the card must
+encrypt using a specified key in the internal authorization
+file (0001) for the current directory. A following Get Response
+command returns the first 6 bytes of the DES encryption of
+the challenge using the indicated key.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+C0 & 88 & 00 & P2 & 08 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[P2:] Key number (00-0F)
+\item[Data:] 8 Byte challenge
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+Data may be available.
+
+%-------------------------------------------------------------------
+
+\subsection{Internal RSA Authentication (Only Cryptoflex)}
+
+\subsubsection*{Description}
+
+''Signs a message given by the external world using RSA.''
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+94 & 42 & 00 & KeyNum & 80 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[KeyNum:] RSA key number
+\item[Data:] Data
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Invalidate}
+
+\subsubsection*{Description}
+
+The currently selected elementary file is invalidated and will
+subsequently only respond successfully to the Selected File and
+Rehabilitate commands.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 04 & 00 & 00 & Lc \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data:] First 6 bytes of cryptogram when required by access conditions.
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Key Generation (Only Cryptoflex)}
+
+\subsubsection*{Description}
+
+Generates 1024bit RSA key.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 14 & 00 & KeyNum & 00 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[KeyNum:] RSA key number
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Load Certificate (Only Cryptoflex)}
+
+\subsubsection*{Description}
+
+''Loads a certificate signed by a certificate authority and extracts
+the application's RSA public key from it.''
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 84 & 00 & KeyNum & 80 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[KeyNum:] RSA key number
+\item[Data:] RSA public key
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Load EXE}
+
+\subsubsection*{Description}
+
+Loads executable code into EEPROM to add new functions.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & F4 & ?? & ?? & ?? \\ \hline
+\end{tabular}
+
+Arguments: FID, Data
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|c|} \hline
+?? & SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Read Binary}
+
+\subsubsection*{Description}
+
+Reads a sequence of bytes from the currently selected transparent file.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Le \\ \hline \hline
+C0 & B0 & P1 & P2 & Le \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[P1:] High byte of the 2-byte offset
+\item[P2:] Low byte of the 2-byte offset
+\item[Le:] Number of bytes to read starting at the offset byte
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|c|} \hline
+Data & SW1 & SW2 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data:] Le Bytes of data from file
+\end{description}
+
+%-------------------------------------------------------------------
+
+\subsection{Read Header (Only Multiflex 8K and Cryptoflex)}
+
+\subsubsection*{Description}
+
+Retrives detailed information on current file descriptor.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+?? & ?? & ?? & ?? & ?? \\ \hline
+\end{tabular}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|c|} \hline
+?? & SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Read EEPROM}
+
+\subsubsection*{Description}
+
+Reads EEPROM test zone.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Le \\ \hline \hline
+?? & BA & ?? & ?? & ?? \\ \hline
+\end{tabular}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|c|} \hline
+?? & SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Read Record}
+
+\subsubsection*{Description}
+
+Reads one record from the currently selected record file.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Le \\ \hline \hline
+C0 & B2 & P1 & P2 & Le \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[P1:] Index of record to be read (00: current record)
+\item[P2:] Selection of the record to be read (00: first record,
+     01: last record, 02: next record, 03: previous record,
+     04: current record if index is 00, else index record)
+\item[Le:] Bytes to read (Must be equal record length)
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|c|} \hline
+Data & SW1 & SW2 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data:] Le Bytes of data from record
+\end{description}
+
+%-------------------------------------------------------------------
+
+\subsection{Read Status (Only Multiflex 8K and Cryptoflex)}
+
+\subsubsection*{Description}
+
+Lists status and context variables.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+?? & ?? & ?? & ?? & ?? \\ \hline
+\end{tabular}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|c|} \hline
+?? & SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Rehabilitate}
+
+\subsubsection*{Description}
+
+The currently selected elementary file is rehabilitated (that is,
+removed from invalidated status).
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 44 & 00 & 00 & Lc \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data:] First 6 bytes of cryptogram when required by access conditions.
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Seek}
+
+\subsubsection*{Description}
+
+Locate a record in a linear record file by matching a pattern of
+characters to the characters in each record starting at a given
+offset from the beginning of the record
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & A2 & P1 & P2 & Lc \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[P1:] Offset
+\item[P2:] Search mode (00: from first record, 02: from next record)
+\item[Data:] Character string to be matched
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Select File}
+
+\subsubsection*{Description}
+
+The file whose file ID is given in the data field of the command becomes
+the currently selected file. It must be a file in the currently selected
+directory. If the named file is a directory, then it becomes the currently
+selected directory. If the file identifier is 0x3F00 it is always the
+master files selected. If the file identifier is the directory file
+directly above the current file it becomes the current file.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+C0 & A4 & 00 & 00 & 02 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data:] 2-Byte file identifier
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+File description data my be available.
+
+\begin{table}[h!]
+\caption{File description for selection of file}
+\begin{center}
+\begin{tabular}{|c|c|l|} \hline
+Byte & Value & Meaning  \\ \hline \hline
+1-2  &  -  &  Unused  \\ \hline
+3-4  &  -  &  DF: Free bytes available  \\
+     &     &  EF: Size \\ \hline
+5-6  &  -  &  FID  \\ \hline
+7    &     &  File type  \\ \cline{2-3}
+     &  01 &  Transparent file \\ \cline{2-3}
+     &  02 &  Record file with fixed-length records \\ \cline{2-3}
+     &  04 &  Record file with variable-length records \\ \cline{2-3}
+     &  06 &  Cyclic file \\ \cline{2-3}
+     &  38 &  Directory file  \\ \hline
+8    &  -  &  Update access conditions (see Create File) \\
+     &     &  Unused of directory files \\ \hline
+9-11 &     &  Access conditions (see Create File) \\ \hline
+9 High &   &  DF: Directory \\
+     &     &  EF: Read, Seek \\ \hline
+9 Low &    &  DF: - \\
+     &     &  EF: Update, Decrease, Decrease Stamped \\ \hline
+10 High &  &  DF: Delete File \\
+     &     &  EF: Increase, Increase Stamped \\\hline
+10 Low &   &  DF: Create File \\
+     &     &  EF: Create Record \\ \hline
+11 High &  &  DF/EF: Rehabilitate \\ \hline
+11 Low &   &  DF/EF: Invalitate \\ \hline
+12   &     &  Status \\ \cline{2-3}
+     &  00 &  blocked \\ \cline{2-3}
+     &  01 &  unblocked \\ \hline
+     &     &  \\ \hline
+     &     &  Directory files: \\ \hline
+13   &  05 &  Number of following bytes \\ \hline
+14   &  -  &  Unused \\ \hline
+15   &  -  &  Number of subdirectories in this directory \\ \hline
+16   &  -  &  Number of elementary files in this directory \\ \hline
+17   &  -  &  Number of secret codes in this directory \\ \hline
+18   &  -  &  Unused \\ \hline
+19   &  -  &  Status of the PIN for this directory \\ \hline
+20   &  -  &  Status of the PIN unblocking key \\ \hline
+     &     &  \\ \hline
+     &     &  Elementary files: \\ \hline
+13   &  01 &  Number of following bytes \\ \hline
+14   &  -  &  Unused \\ \hline
+15   &  -  &  Length of record in fixed-length record files \\
+     &     &  (00 for non-record files) \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+%-------------------------------------------------------------------
+
+\subsection{Unblock PIN}
+
+\subsubsection*{Description}
+
+The selected PIN file has become blocked because the number of
+presentations of an incorrect PIN has exceeded the number of
+allowed tries. This command will unblock the PIN file and
+reset the PIN to a new value.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 2C & 00 & 01 & 10 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data1:] 8-Byte unblocking PIN for current PIN file
+\item[Data2:] 8-Byte new PIN
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Update Binary}
+
+\subsubsection*{Description}
+
+A sequence of bytes is written into thee currently selcted transparent
+elementary file.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+C0 & D6 & P1 & P2 & Lc \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[P1:] High byte of the 2-byte offset
+\item[P2:] Low byte of the 2-byte offset
+\item[Lc:] Number of bytes to be written into the file starting at
+     the offset byte; +6 if cryptogram is provided
+\item[Data1:] Data to be written starting at he offset byte
+\item[Data2:] First 6 bytes of cryptogram when required by access conditions.
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Update Key Enciphered (Only Cryptoflex)}
+
+\subsubsection*{Description}
+
+''Receives enciphered data by means of the DES algorithm.''
+
+(Is this Update Binary with cryptogram?)
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Le \\ \hline \hline
+C0 & DE & P1 & P2 & Le \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[P1:] High offset
+\item[P2:] Low offset
+\item[Data:] Data
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Update Record}
+
+\subsubsection*{Description}
+
+One record in the currently slected record file is overwritten
+with new data.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+C0 & DC & P1 & P2 & Lc \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[P1:] Index of record to be overwritten (00: current record)
+\item[P2:] Selection of the record to be overwritten (00: first record,
+     01: last record, 02: next record, 03: previous record,
+     04: current record if index is 00, else index record)
+\item[Le:] Bytes to be written (Must be equal record length);
+     +6 if cryptogram is provided
+\item[Data1:] Data to be written
+\item[Data2:] First 6 bytes of cryptogram when required by access conditions.
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Verify Data (Only Cryptoflex)}
+
+\subsubsection*{Description}
+
+''Authenticates data signed and sent by the application. The length
+of the applied RSA is 1024 bits.''
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 82 & 00 & KeyNum(?) & 80 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[KeyNum:] RSA key number
+\item[Data:] Data
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Verify Key}
+
+\subsubsection*{Description}
+
+Match a byte sequence with a key in the external authorization file
+(0011) for the current directory. If the match is exact, external
+authorization access priviledges are granted.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 2A & 00 & P2 & Lc \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[P2:] Key number (00-0F)
+\item[Data:] Key
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Verify PIN}
+
+\subsubsection*{Description}
+
+Attempt to match the 8 bytes in the command with the 8-byte PIN
+in the PIN file for the current directory. If the match is exact
+the PIN access priviledges are granted.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+C0 & 20 & 00 & 01 & 08 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[Data:] 8-Byte PIN
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Verify Pub Key (Only Cryptoflex)}
+
+\subsubsection*{Description}
+
+''Receives the public key of the application Kp\_App in plain text
+and in full length for verification with a previously extracted
+public key (see Load Certificate).''
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+F0 & 86 & 00 & KeyNum(?) & 80 \\ \hline
+\end{tabular}
+
+\begin{description}
+\item[KeyNum:] RSA key number
+\item[Data:] Data
+\end{description}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|} \hline
+SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\subsection{Write EEPROM}
+
+\subsubsection*{Description}
+
+Writes to EEPROM test zone.
+
+\subsubsection*{C-APDU}
+
+\begin{tabular}{|c|c|c|c|c|} \hline
+CLA & INS & P1 & P2 & Lc \\ \hline \hline
+?? & B8 & ?? & ?? & ?? \\ \hline
+\end{tabular}
+
+\subsubsection*{R-APDU}
+
+\begin{tabular}{|c|c|c|} \hline
+?? & SW1 & SW2 \\ \hline
+\end{tabular}
+
+%-------------------------------------------------------------------
+
+\section{File Structures}
+
+\subsection{Important files}
+
+\begin{center}
+\begin{tabular}{|c|l|l|c|} \hline
+FID   & File Name & Contents & Max. Num. \\ \hline
+      &           &          & of Keys     \\ \hline \hline
+0000 & PIN file & PIN code & 1 \\ \hline
+0001 & Internal authentication file & Internal cryptographic keys & 16 \\ \hline
+0002 & Serial number file & Serial number, customer ID, etc. & \\ \hline
+0011 & External authentication file & External cryptographic keys & 16 \\ \hline
+3F00 & Master File & & \\ \hline
+\end{tabular}
+\end{center}
+
+\subsection{Record file sizes}
+
+\begin{center}
+\begin{tabular}{|l|c|c|} \hline
+File type & Maximum & Maximum \\
+ & Record Size & Number of Records \\ \hline \hline
+Record file with fixed-length records & 255 Bytes & 255 \\ \hline
+Record file with variable-length records & 255 Bytes & 255 \\ \hline
+Cyclic file & 255 Bytes & 255 \\ \hline
+\end{tabular}
+\end{center}
+
+\subsection{Serial number file}
+
+\begin{center}
+\begin{tabular}{|c|l|} \hline
+Bytes & Description \\ \hline \hline
+1 - 4 & Series number \\ \hline
+5     & Customer identification code \\ \hline
+6 - 7 & Schlumberger manufacturing site \\ \hline
+8     & Usage \\ \hline
+\end{tabular}
+\end{center}
+
+\subsection{PIN file}
+
+\begin{center}
+\begin{tabular}{|c|l|} \hline
+Bytes & Description \\ \hline \hline
+1     & Activation byte (00: PIN blocked, FF: unblocked) \\ \hline
+2 - 3 & RFU \\ \hline
+4 - 11 & PIN code (FF: Byte is ignored) \\ \hline
+12    & Attempts allowed \\ \hline
+13    & Attempts remaining \\ \hline
+14 - 21 & Unblocking PIN code (FF: Byte is ignored) \\ \hline
+22    & Unblocking attempts allowed \\ \hline
+23    & Unblocking attempts remaining \\ \hline
+\end{tabular}
+\end{center}
+
+\subsection{Authentication key files}
+
+\begin{center}
+\begin{tabular}{|c|l|} \hline
+Bytes & Description \\ \hline \hline
+1     & Unused \\ \hline
+2     & Length of key 0 (Normally 8, because of DES) \\ \hline
+3     & Algorithm for key 0 (0: DES) \\ \hline
+4 - 11 & Key 0 (when 8 bytes long) \\ \hline
+12    & Maximum attempts for key 0 \\ \hline
+13    & Remaining attempts for key 0 \\ \hline
+14 -  & For next keys repeate bytes 2 - 13 \\ \hline
+\end{tabular}
+\end{center}
+
+Default external authentication key file in MF contains keys 0, 1 and 2.
+Key 1 is set to 47h 46h 58h 49h 32h 56h 78h 40h. You have three tries
+to present the correct key. This is valid for the cards which come with
+the SCDK and the cards ordered at the web site mentioned in the preface.
+
+\section{Misc}
+
+\subsection{Validity of PINs and cryptographics keys}
+
+PINs and cryptographics keys are valid in the directory of the key
+files and all subdirectories where no appropriate key file is.
+
+The cryptogram ist the first 6 bytes of a DES-encrypted challenge.
+(SCDK varies between 6 and 8 bytes, but most of the time it is 6 bytes.)
+
+\subsection{Cryptogram}
+
+The normal command excluding the CLA byte is filled up with 0xFF
+up to a multiple of 8 bytes. The maximum data size is 24 bytes.
+This data is encrypted with DES-CBC with a previously fetched
+challenge as an initial vector. The first 6 bytes of the last
+encrypted block is the cryptogram.
+
+To use this cryptogram send everything of the above data starting
+at the length byte including the filling bytes up to the cryptogram
+as the data of the instruction and adjust the Lc byte of the real
+header accordingly.
+
+\subsection{ATR}
+
+\begin{center}
+\begin{tabular}{|l|l|} \hline
+Card & ATR \\ \hline \hline
+Multiflex 3K - G1 & 3B 02 14 50 \\ \hline
+Multiflex 3K - G1 & 3B 32 15 00 06 80 \\ \hline
+Multiflex 8K & 3B 32 15 00 06 80 \\ \hline
+Cryptoflex & 3B 63 00 00 36 41 80 \\ \hline
+\end{tabular}
+\end{center}
+
+\subsection{Status words}
+
+\begin{center}
+\begin{tabular}{|c|l|} \hline
+Status word & Description \\ \hline \hline
+61 XX & Command executed successfully; XX bytes available \\ \hline
+62 81 & Data my be corrupted \\ \hline
+62 83 & Current directory/file is invalidated \\ \hline
+63 00 & Invalid PIN/cryptogram \\ \hline
+65 00 & Too much data for protected-mode \\ \hline
+65 81 & Memory problem \\ \hline
+65 81 & Update impossible \\ \hline
+67 XX & Incorrect P3; expected XX \\ \hline
+69 81 & No PIN or key defined \\ \hline
+69 82 & Access condition not fulfilled \\ \hline
+69 83 & (Unblocking) PIN/Key currently blocked \\ \hline
+69 85 & No Get Challenge immediately preceding command \\ \hline
+69 86 & Currently selected file is not a cyclic file \\ \hline
+69 86 & No file selected \\ \hline
+6A 80 & Pattern not found \\ \hline
+6A 80 & File ID already in use in this directory \\ \hline
+6A 80 & Record length value is too large \\ \hline
+6A 80 & Type of current file is inconsistent with command \\ \hline
+6A 82 & File ID not found \\ \hline
+6A 83 & Record index out of range \\ \hline
+6A 84 & Insufficient memory space available \\ \hline
+6B 00 & Incorrect P1 or P2 \\ \hline
+6B 00 & Offset out of range \\ \hline
+6D 00 & Unknown INS \\ \hline
+6E 00 & Unknown CLA \\ \hline
+6F 00 & Internal problem \\ \hline
+90 00 & Command executed successfully \\ \hline
+98 50 & Decrease cannot be performed; \\
+      & new value would be less than minimum \\ \hline
+\end{tabular}
+\end{center}
+
+\end{document}
+
+
